@@ -312,32 +312,7 @@ export async function POST(request) {
       );
     }
 
-    // Check if we already have this location
-    const existingLocation = db
-      .prepare("SELECT * FROM locations WHERE pano_id = ?")
-      .get(panoId);
 
-    if (existingLocation) {
-      console.log("ℹ️ Location already exists in database");
-      return NextResponse.json(
-        {
-          success: true,
-          message: "Location already exists",
-          location: {
-            ...existingLocation,
-            images: JSON.parse(existingLocation.images || "[]"),
-            raw_data: JSON.parse(existingLocation.raw_data || "{}"),
-          },
-        },
-        {
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-          },
-        },
-      );
-    }
 
     // Fetch meta data from LearnableMeta API
     const metaData = await fetchLearnableMetaData(panoId, mapId, source);
@@ -353,6 +328,8 @@ export async function POST(request) {
         },
       });
     }
+
+
 
     // Extract and validate country code for flag display
     const countryCode = getCountryCode(metaData.country);
@@ -372,15 +349,16 @@ export async function POST(request) {
       raw_data: JSON.stringify(metaData),
     };
 
-    // Insert into database
+    // Insert into database (ignore duplicate raw_data)
     const insertStmt = db.prepare(`
       INSERT INTO locations (
         pano_id, map_id, country, country_code, meta_name,
         note, footer, images, raw_data
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(raw_data) DO NOTHING
     `);
 
-    const result = insertStmt.run(
+    const insertInfo = insertStmt.run(
       locationData.pano_id,
       locationData.map_id,
       locationData.country,
@@ -392,21 +370,31 @@ export async function POST(request) {
       locationData.raw_data,
     );
 
-    console.log(
-      `💾 Stored location in database with ID: ${result.lastInsertRowid}`,
-    );
+    let newLocation;
+    let message;
 
-    // Fetch the newly created location to return complete data
-    const newLocation = db
-      .prepare("SELECT * FROM locations WHERE id = ?")
-      .get(result.lastInsertRowid);
+    if (insertInfo.changes === 0) {
+      console.log("ℹ️ Location already exists in database (ON CONFLICT)");
+      newLocation = db
+        .prepare("SELECT * FROM locations WHERE raw_data = ?")
+        .get(locationData.raw_data);
+      message = "Location already exists";
+    } else {
+      console.log(
+        `💾 Stored location in database with ID: ${insertInfo.lastInsertRowid}`,
+      );
+      newLocation = db
+        .prepare("SELECT * FROM locations WHERE id = ?")
+        .get(insertInfo.lastInsertRowid);
+      message = "Location collected successfully";
+    }
 
     console.log("✅ Successfully collected and stored location data");
 
     return NextResponse.json(
       {
         success: true,
-        message: "Location collected successfully",
+        message,
         location: {
           ...newLocation,
           images: JSON.parse(newLocation.images || "[]"),

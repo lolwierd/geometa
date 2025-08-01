@@ -37,6 +37,7 @@ function init() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_map_id ON locations (map_id);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_created_at ON locations (created_at DESC);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_meta_name ON locations (meta_name);`);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_raw_data_unique ON locations (raw_data);`);
 
   // Create full-text search index for notes and footer
   db.exec(`
