@@ -1,50 +1,238 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import Database from "better-sqlite3";
 
-interface ScreenshotRow {
+const db = new Database("db/geometa.db");
+
+interface LocationRow {
   id: number;
-  image_path: string;
-  metadata: string;
+  pano_id: string;
+  map_id: string;
   country: string;
+  country_code: string | null;
+  meta_name: string | null;
+  note: string | null;
+  footer: string | null;
+  images: string;
+  raw_data: string;
   created_at: string;
+  updated_at: string;
 }
 
-export async function GET(req: NextRequest) {
+interface ProcessedLocation extends Omit<LocationRow, "images" | "raw_data"> {
+  images: string[];
+  raw_data: Record<string, any>;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const country = searchParams.get('country');
-    const q = searchParams.get('q');
+    const { searchParams } = new URL(request.url);
+    const country = searchParams.get("country");
+    const search = searchParams.get("q");
+    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100); // Cap at 100
+    const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
 
-    let query = 'SELECT id, image_path, metadata, country, created_at FROM screenshots';
-    const params = [];
+    console.log("🔍 Gallery API request:", { country, search, limit, offset });
 
-    const conditions = [];
-    if (country) {
-      conditions.push('country = ?');
-      params.push(country);
+    let query: string;
+    let countQuery: string;
+    const params: any[] = [];
+    const countParams: any[] = [];
+
+    // Use full-text search if search term provided
+    if (search && search.trim()) {
+      query = `
+        SELECT l.* FROM locations l
+        JOIN locations_fts fts ON l.id = fts.rowid
+        WHERE locations_fts MATCH ?
+      `;
+      countQuery = `
+        SELECT COUNT(*) as total FROM locations l
+        JOIN locations_fts fts ON l.id = fts.rowid
+        WHERE locations_fts MATCH ?
+      `;
+
+      // Escape FTS special characters and add wildcards
+      const ftsQuery = search
+        .trim()
+        .replace(/['"*]/g, "")
+        .split(/\s+/)
+        .map((term) => `"${term}"*`)
+        .join(" OR ");
+      params.push(ftsQuery);
+      countParams.push(ftsQuery);
+
+      // Add country filter if specified
+      if (country && country !== "all") {
+        query += " AND l.country = ?";
+        countQuery += " AND l.country = ?";
+        params.push(country);
+        countParams.push(country);
+      }
+    } else {
+      // Regular query without full-text search
+      query = "SELECT * FROM locations WHERE 1=1";
+      countQuery = "SELECT COUNT(*) as total FROM locations WHERE 1=1";
+
+      // Country filter
+      if (country && country !== "all") {
+        query += " AND country = ?";
+        countQuery += " AND country = ?";
+        params.push(country);
+        countParams.push(country);
+      }
     }
-    if (q) {
-      conditions.push("metadata LIKE ?");
-      params.push(`%${q}%`);
-    }
 
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
+    // Add ordering and pagination
+    query += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+    params.push(limit, offset);
 
-    query += ' ORDER BY created_at DESC';
-
+    // Execute main query
     const stmt = db.prepare(query);
-    const screenshots = stmt.all(...params) as ScreenshotRow[];
+    const locations = stmt.all(...params) as LocationRow[];
 
-    const data = screenshots.map((ss) => ({
-      ...ss,
-      metadata: JSON.parse(ss.metadata),
-    }));
+    // Execute count query
+    const countStmt = db.prepare(countQuery);
+    const { total } = countStmt.get(...countParams) as { total: number };
 
-    return NextResponse.json(data);
+    // Process locations - parse JSON fields
+    const processedLocations: ProcessedLocation[] = locations.map(
+      (location) => ({
+        ...location,
+        images: safeJsonParse(location.images, []),
+        raw_data: safeJsonParse(location.raw_data, {}),
+      }),
+    );
+
+    // Get unique countries for filter dropdown
+    const countriesStmt = db.prepare(
+      "SELECT DISTINCT country FROM locations WHERE country IS NOT NULL ORDER BY country",
+    );
+    const countriesResult = countriesStmt.all() as { country: string }[];
+    const countries = countriesResult.map((row) => row.country);
+
+    // Get some stats
+    const statsStmt = db.prepare(
+      "SELECT COUNT(*) as total_locations, COUNT(DISTINCT country) as total_countries FROM locations",
+    );
+    const stats = statsStmt.get() as {
+      total_locations: number;
+      total_countries: number;
+    };
+
+    console.log(
+      `✅ Gallery API: Returning ${processedLocations.length}/${total} locations`,
+    );
+
+    return NextResponse.json({
+      success: true,
+      locations: processedLocations,
+      total,
+      countries,
+      stats,
+      pagination: {
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+        page: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(total / limit),
+      },
+      filters: {
+        country: country === "all" ? null : country,
+        search: search || null,
+      },
+    });
   } catch (error) {
-    console.error('Gallery error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("❌ Gallery API error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to fetch gallery data",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
   }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Location ID is required" },
+        { status: 400 },
+      );
+    }
+
+    console.log(`🗑️ Deleting location with ID: ${id}`);
+
+    // Check if location exists
+    const existingLocation = db
+      .prepare("SELECT id, country, meta_name FROM locations WHERE id = ?")
+      .get(id);
+
+    if (!existingLocation) {
+      return NextResponse.json(
+        { error: "Location not found" },
+        { status: 404 },
+      );
+    }
+
+    // Delete the location
+    const deleteStmt = db.prepare("DELETE FROM locations WHERE id = ?");
+    const result = deleteStmt.run(id);
+
+    if (result.changes === 0) {
+      return NextResponse.json(
+        { error: "Failed to delete location" },
+        { status: 500 },
+      );
+    }
+
+    console.log(
+      `✅ Successfully deleted location: ${existingLocation.country} - ${existingLocation.meta_name || "Unknown"}`,
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: "Location deleted successfully",
+      deleted: existingLocation,
+    });
+  } catch (error) {
+    console.error("❌ Delete location error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to delete location",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+// Helper function to safely parse JSON with fallback
+function safeJsonParse<T>(jsonString: string, fallback: T): T {
+  try {
+    if (!jsonString || jsonString.trim() === "") {
+      return fallback;
+    }
+    const parsed = JSON.parse(jsonString);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (error) {
+    console.warn("Failed to parse JSON:", jsonString, error);
+    return fallback;
+  }
+}
+
+// Handle OPTIONS requests for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }

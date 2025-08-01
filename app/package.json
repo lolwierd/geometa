@@ -1,35 +1,39 @@
 {
-  "name": "app",
-  "version": "1.0.0",
+  "name": "geometa-gallery",
+  "version": "2.0.0",
+  "description": "Personal GeoGuessr meta collection and study tool - simplified and streamlined",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:init": "node db/init.mjs"
+    "db:init": "node db/schema-new.mjs",
+    "db:migrate": "node db/schema-new.mjs",
+    "db:backup": "cp db/geometa.db db/geometa-backup-$(date +%Y%m%d-%H%M%S).db"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "geoguessr",
+    "meta",
+    "geography",
+    "learning",
+    "collection"
+  ],
+  "author": "GeoMeta Gallery",
+  "license": "MIT",
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.3",
-    "@tailwindcss/postcss": "^4.1.11",
-    "@types/react-window": "^1.8.8",
     "better-sqlite3": "^12.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.23.12",
     "lucide-react": "^0.535.0",
     "next": "^15.4.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-virtualized-auto-sizer": "^1.0.26",
-    "react-window": "^1.8.11",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
@@ -40,7 +44,13 @@
     "eslint": "^9.32.0",
     "eslint-config-next": "^15.4.5",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "local"
   }
 }
