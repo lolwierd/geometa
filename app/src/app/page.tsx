@@ -122,12 +122,10 @@ export default function Home() {
     [searchTerm, selectedCountries, pagination.limit, pagination.offset],
   );
 
-  // Fetch whenever filters (search/countries) or page size change
+  // Initial fetch
   useEffect(() => {
     fetchLocations(true);
-    // We intentionally omit pagination.offset to avoid infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedCountries, pagination.limit]);
+  }, [fetchLocations]); // Reset when filters change
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
@@ -157,7 +155,7 @@ export default function Home() {
   };
 
   // Refresh all data
-    const handleRefresh = () => {
+  const handleRefresh = () => {
     setSearchTerm("");
     setSelectedCountries([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
@@ -328,7 +326,7 @@ export default function Home() {
             </div>
 
             {/* Load More */}
-            {pagination.hasMore && locations.length > 0 && (
+            {pagination.hasMore && (
               <div className="text-center">
                 <Button
                   onClick={handleLoadMore}
