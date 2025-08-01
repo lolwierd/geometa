@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +72,9 @@ export default function Home() {
     totalPages: 1,
   });
 
+  // Ref for infinite scroll sentinel
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
   // Fetch locations from API
   const fetchLocations = useCallback(
     async (reset = false) => {
@@ -122,10 +125,11 @@ export default function Home() {
     [searchTerm, selectedCountries, pagination.limit, pagination.offset],
   );
 
-  // Initial fetch
+  // Initial fetch & refetch when filters change
   useEffect(() => {
     fetchLocations(true);
-  }, [fetchLocations]); // Reset when filters change
+    // We intentionally omit pagination.offset from deps to avoid infinite loop
+  }, [searchTerm, selectedCountries, pagination.limit]);
 
   // Auto-refresh when the tab becomes visible or the window gains focus
   useEffect(() => {
@@ -143,6 +147,30 @@ export default function Home() {
       window.removeEventListener("focus", handleVisibility);
     };
   }, [fetchLocations]);
+
+  // Infinite scroll observer to automatically fetch more locations
+  // Keep the latest fetchLocations in a ref so the observer callback is always fresh
+  const fetchRef = useRef(fetchLocations);
+  useEffect(() => {
+    fetchRef.current = fetchLocations;
+  }, [fetchLocations]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel || !pagination.hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          fetchRef.current(false);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [pagination.hasMore, loading]);
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
@@ -164,11 +192,6 @@ export default function Home() {
       ...prev,
       total_locations: prev.total_locations - 1,
     }));
-  };
-
-  // Load more locations
-  const handleLoadMore = () => {
-    fetchLocations(false);
   };
 
   // Refresh all data
@@ -342,26 +365,9 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Load More */}
+            {/* Infinite Scroll Sentinel */}
             {pagination.hasMore && (
-              <div className="text-center">
-                <Button
-                  onClick={handleLoadMore}
-                  disabled={loading}
-                  variant="outline"
-                  size="lg"
-                  className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    `Load More (${stats.total_locations - locations.length} remaining)`
-                  )}
-                </Button>
-              </div>
+              <div ref={loadMoreRef} className="h-px"></div>
             )}
 
             {/* Pagination Info */}
