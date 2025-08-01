@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, RefreshCw, MapPin, Database, Globe } from "lucide-react";
+import { MultiSelectComboBox, Option } from "@/components/ui/multi-select-combobox";
 import MetaCard from "@/components/MetaCard";
 
 interface Location {
@@ -46,12 +47,12 @@ interface GalleryResponse {
     totalPages: number;
   };
   filters: {
-    country: string | null;
+    country: string[] | null;
     search: string | null;
   };
 }
 
-export default function HomePage() {
+export default function Home() {
   // State management
   const [locations, setLocations] = useState<Location[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -61,10 +62,8 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Filter state
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState<string>("all");
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     limit: 24,
     offset: 0,
@@ -82,8 +81,9 @@ export default function HomePage() {
 
         const params = new URLSearchParams();
         if (searchTerm.trim()) params.append("q", searchTerm.trim());
-        if (selectedCountry !== "all")
-          params.append("country", selectedCountry);
+        if (selectedCountries.length > 0) {
+          params.set("country", selectedCountries.join(","));
+        }
         params.append("limit", pagination.limit.toString());
         params.append("offset", reset ? "0" : pagination.offset.toString());
 
@@ -96,7 +96,7 @@ export default function HomePage() {
         const data: GalleryResponse = await response.json();
 
         if (!data.success) {
-          throw new Error(data.error || "Failed to fetch locations");
+          throw new Error("API returned an error");
         }
 
         setLocations((prev) =>
@@ -119,13 +119,15 @@ export default function HomePage() {
         setLoading(false);
       }
     },
-    [searchTerm, selectedCountry, pagination.limit, pagination.offset],
+    [searchTerm, selectedCountries, pagination.limit, pagination.offset],
   );
 
-  // Initial fetch
+  // Fetch whenever filters (search/countries) or page size change
   useEffect(() => {
     fetchLocations(true);
-  }, [searchTerm, selectedCountry]); // Reset when filters change
+    // We intentionally omit pagination.offset to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedCountries, pagination.limit]);
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
@@ -135,8 +137,8 @@ export default function HomePage() {
   };
 
   // Handle country filter change
-  const handleCountryChange = (value: string) => {
-    setSelectedCountry(value);
+  const handleCountryChange = (values: string[]) => {
+    setSelectedCountries(values);
     setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
@@ -155,8 +157,10 @@ export default function HomePage() {
   };
 
   // Refresh all data
-  const handleRefresh = () => {
-    setPagination((prev) => ({ ...prev, offset: 0 }));
+    const handleRefresh = () => {
+    setSearchTerm("");
+    setSelectedCountries([]);
+    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
     fetchLocations(true);
   };
 
@@ -214,24 +218,13 @@ export default function HomePage() {
                 </Button>
               </form>
 
-              <Select
-                value={selectedCountry}
-                onValueChange={handleCountryChange}
-              >
-                <SelectTrigger className="w-full sm:w-48 bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Filter by country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    All Countries ({stats.total_countries})
-                  </SelectItem>
-                  {countries.map((country) => (
-                    <SelectItem key={country} value={country}>
-                      {country}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectComboBox
+                options={countries.map((c) => ({ value: c, label: c }))}
+                selected={selectedCountries}
+                onChange={handleCountryChange}
+                placeholder="Filter by country..."
+                className="w-full md:w-[280px]"
+              />
 
               <Button
                 onClick={handleRefresh}
@@ -285,7 +278,7 @@ export default function HomePage() {
                 <h3 className="text-lg font-semibold mb-2 text-white">
                   No Locations Found
                 </h3>
-                {searchTerm || selectedCountry !== "all" ? (
+                {searchTerm || selectedCountries.length > 0 ? (
                   <div>
                     <p className="text-slate-300 mb-4">
                       No locations match your current filters.
@@ -293,7 +286,7 @@ export default function HomePage() {
                     <Button
                       onClick={() => {
                         setSearchTerm("");
-                        setSelectedCountry("all");
+                        setSelectedCountries([]);
                       }}
                       variant="outline"
                       className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
@@ -335,7 +328,7 @@ export default function HomePage() {
             </div>
 
             {/* Load More */}
-            {pagination.hasMore && (
+            {pagination.hasMore && locations.length > 0 && (
               <div className="text-center">
                 <Button
                   onClick={handleLoadMore}

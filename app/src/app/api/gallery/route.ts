@@ -63,10 +63,14 @@ export async function GET(request: NextRequest) {
 
       // Add country filter if specified
       if (country && country !== "all") {
-        query += " AND l.country = ?";
-        countQuery += " AND l.country = ?";
-        params.push(country);
-        countParams.push(country);
+        const countryList = country.split(',').filter(c => c.trim() !== '');
+        if (countryList.length > 0) {
+          const placeholders = countryList.map(() => '?').join(',');
+          query += ` AND l.country IN (${placeholders})`;
+          countQuery += ` AND l.country IN (${placeholders})`;
+          params.push(...countryList);
+          countParams.push(...countryList);
+        }
       }
     } else {
       // Regular query without full-text search
@@ -75,10 +79,14 @@ export async function GET(request: NextRequest) {
 
       // Country filter
       if (country && country !== "all") {
-        query += " AND country = ?";
-        countQuery += " AND country = ?";
-        params.push(country);
-        countParams.push(country);
+        const countryList = country.split(',').filter(c => c.trim() !== '');
+        if (countryList.length > 0) {
+          const placeholders = countryList.map(() => '?').join(',');
+          query += ` AND country IN (${placeholders})`;
+          countQuery += ` AND country IN (${placeholders})`;
+          params.push(...countryList);
+          countParams.push(...countryList);
+        }
       }
     }
 
@@ -137,7 +145,7 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
       filters: {
-        country: country === "all" ? null : country,
+        country: country === "all" ? null : country?.split(','),
         search: search || null,
       },
     });
@@ -170,7 +178,7 @@ export async function DELETE(request: NextRequest) {
     // Check if location exists
     const existingLocation = db
       .prepare("SELECT id, country, meta_name FROM locations WHERE id = ?")
-      .get(id);
+      .get(id) as { id: number; country: string; meta_name: string | null } | undefined;
 
     if (!existingLocation) {
       return NextResponse.json(
