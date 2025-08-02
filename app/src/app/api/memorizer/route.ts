@@ -5,6 +5,8 @@ interface Progress {
   repetitions: number;
   ease_factor: number;
   interval: number;
+  state: "new" | "learning" | "review" | "lapsed";
+  lapses: number;
 }
 
 // Simple SM-2 algorithm implementation
@@ -13,24 +15,35 @@ function calculateNextReview(
   repetitions: number,
   easeFactor: number,
   interval: number,
+  state: "new" | "learning" | "review" | "lapsed",
+  lapses: number,
 ) {
+  let newState = state;
+  let newLapses = lapses;
+
   // Learning phase for brand new cards: if a new card is marked hard,
   // show it again shortly instead of waiting a full day
-  if (repetitions === 0 && quality < 3) {
+  if (repetitions === 0 && quality < 3 && state !== "lapsed") {
+    newLapses += 1;
     return {
       repetitions: 0,
       easeFactor,
       interval: 0,
+      state: "learning",
+      lapses: newLapses,
       reviewDelayMinutes: 5,
     } as const;
   }
 
   if (quality < 3) {
     // Lapsed card: dramatically reduce the interval but don't reset to a single day
+    newLapses += 1;
     return {
       repetitions: 0,
       easeFactor,
       interval: 7, // Revisit in about a week
+      state: "lapsed",
+      lapses: newLapses,
     } as const;
   }
 
@@ -41,12 +54,15 @@ function calculateNextReview(
   if (repetitions === 0) {
     newRepetitions = 1;
     newInterval = 1;
+    newState = "learning";
   } else if (repetitions === 1) {
     newRepetitions = 2;
     newInterval = 6;
+    newState = "review";
   } else {
     newRepetitions = repetitions + 1;
     newInterval = Math.round(interval * easeFactor);
+    newState = "review";
   }
 
   newEaseFactor =
@@ -59,6 +75,8 @@ function calculateNextReview(
     repetitions: newRepetitions,
     easeFactor: newEaseFactor,
     interval: newInterval,
+    state: newState,
+    lapses: newLapses,
   } as const;
 }
 
@@ -87,7 +105,15 @@ export async function GET() {
         SELECT l.id
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-        ORDER BY mp.repetitions ASC, RANDOM()
+        ORDER BY
+          CASE COALESCE(mp.state, 'new')
+            WHEN 'new' THEN 0
+            WHEN 'learning' THEN 1
+            WHEN 'lapsed' THEN 2
+            ELSE 3
+          END,
+          mp.repetitions ASC,
+          RANDOM()
         LIMIT 1
       `,
         )
@@ -106,8 +132,20 @@ export async function GET() {
       .prepare(
         `
         SELECT
-          SUM(CASE WHEN mp.id IS NULL OR (mp.repetitions = 0 AND mp.due_date <= CURRENT_TIMESTAMP) THEN 1 ELSE 0 END) AS new_due,
-          SUM(CASE WHEN mp.repetitions > 0 AND mp.due_date <= CURRENT_TIMESTAMP THEN 1 ELSE 0 END) AS review_due
+          SUM(
+            CASE
+              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= CURRENT_TIMESTAMP)
+                THEN 1
+              ELSE 0
+            END
+          ) AS new_due,
+          SUM(
+            CASE
+              WHEN mp.state IN ('review', 'lapsed') AND mp.due_date <= CURRENT_TIMESTAMP
+                THEN 1
+              ELSE 0
+            END
+          ) AS review_due
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       `,
@@ -154,11 +192,20 @@ export async function POST(request: Request) {
         .get(locationId) as Progress;
     }
 
-    const { repetitions, easeFactor, interval, reviewDelayMinutes } = calculateNextReview(
+    const {
+      repetitions,
+      easeFactor,
+      interval,
+      state,
+      lapses,
+      reviewDelayMinutes,
+    } = calculateNextReview(
       quality,
       progress.repetitions,
       progress.ease_factor,
       progress.interval,
+      progress.state,
+      progress.lapses,
     );
 
     const dueDate = new Date();
@@ -175,10 +222,20 @@ export async function POST(request: Request) {
         repetitions = ?,
         ease_factor = ?,
         "interval" = ?,
+        state = ?,
+        lapses = ?,
         due_date = ?
       WHERE location_id = ?
     `,
-    ).run(repetitions, easeFactor, interval, dueDate.toISOString(), locationId);
+    ).run(
+      repetitions,
+      easeFactor,
+      interval,
+      state,
+      lapses,
+      dueDate.toISOString(),
+      locationId,
+    );
 
     return NextResponse.json({ success: true, message: "Progress updated" });
   } catch (error) {
