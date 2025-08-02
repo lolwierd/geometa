@@ -28,6 +28,9 @@ function migrate() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_due_date ON memorizer_progress (due_date);`);
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_memorizer_location_id ON memorizer_progress (location_id);`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_state ON memorizer_progress (state);`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_memorizer_state_due_date ON memorizer_progress (state, due_date);`,
+  );
 
   // Trigger to automatically update the 'updated_at' timestamp
   db.exec(`

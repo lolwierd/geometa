@@ -95,13 +95,14 @@ export async function GET() {
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       WHERE mp.due_date <= CURRENT_TIMESTAMP OR mp.id IS NULL
       ORDER BY
+        CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
+        mp.due_date ASC,
         CASE
           WHEN mp.state = 'lapsed' THEN 0
           WHEN mp.state = 'review' THEN 1
           WHEN mp.id IS NULL OR mp.state IN ('new', 'learning') THEN 2
           ELSE 3
         END,
-        mp.due_date ASC,
         RANDOM()
       LIMIT 1
     `,
