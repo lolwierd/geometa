@@ -6,12 +6,9 @@ interface Location {
   raw_data: any;
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } },
-) {
+export async function GET(request: NextRequest, context: any) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const id = parseInt(context?.params?.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, message: "Invalid ID" },
