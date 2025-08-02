@@ -75,6 +75,9 @@ export default function MetaCard({ location, onDelete }) {
     ? location.images.filter((img) => img && !imageError[img])
     : [];
 
+  // Generate proxied URL that goes through our cache route for caching
+  const proxyUrl = (u) => (u ? `/api/img?u=${encodeURIComponent(u)}` : "");
+
   const stripHtml = (html) => {
     if (!html) return "";
     const doc = new DOMParser().parseFromString(html, "text/html");
@@ -172,7 +175,7 @@ export default function MetaCard({ location, onDelete }) {
               <div className="relative rounded-md overflow-hidden bg-slate-900 group/image">
                 <div className="aspect-video">
                   <img
-                    src={images[0]}
+                    src={proxyUrl(images[0])}
                     alt="Location meta image"
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => handleImageError(images[0])}
@@ -270,7 +273,7 @@ export default function MetaCard({ location, onDelete }) {
               <div className="space-y-2">
                 <div className="relative rounded-lg overflow-hidden bg-slate-900/50 border border-slate-700">
                   <img
-                    src={images[currentImageIndex]}
+                    src={proxyUrl(images[currentImageIndex])}
                     alt={`Meta image ${currentImageIndex + 1}`}
                     className="w-full max-h-[60vh] object-contain rounded-md"
                     onError={(e) => handleImageError(images[currentImageIndex])}

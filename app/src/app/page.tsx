@@ -68,7 +68,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
-    limit: 24,
+    limit: 72,
     offset: 0,
     hasMore: false,
     page: 1,
@@ -175,15 +175,23 @@ export default function Home() {
     return () => observer.disconnect();
   }, [pagination.hasMore, loading]);
 
+  const scrollToTop = () => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  };
+
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    scrollToTop();
     setPagination((prev) => ({ ...prev, offset: 0 }));
     fetchLocations(true);
   };
 
   // Handle country filter change
   const handleCountryChange = (values: string[]) => {
+    scrollToTop();
     setSelectedCountries(values);
     setPagination((prev) => ({ ...prev, offset: 0 }));
   };
@@ -199,6 +207,7 @@ export default function Home() {
 
   // Refresh all data
   const handleRefresh = () => {
+    scrollToTop();
     setSearchTerm("");
     setSelectedCountries([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));

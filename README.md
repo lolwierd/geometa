@@ -160,6 +160,7 @@ The backend provides a simple REST API:
 - **`POST /api/collect`** - Collect new location (called by userscript)
   - Body: `{ panoId, mapId, roundNumber, source }`
 - **`DELETE /api/gallery?id=X`** - Delete specific location
+- **`GET /api/img?u=<URL>`** - Proxies & caches remote images from *learnablemeta.com* only (returns `Cache-Control: max-age=31536000, immutable`; `x-proxy-cache: hit|miss`)
 
 ## 🎨 Gallery Features
 
