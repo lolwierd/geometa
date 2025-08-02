@@ -24,6 +24,9 @@ function migrate() {
 
     // Index the state column for faster lookups
     db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_state ON memorizer_progress (state);`);
+    db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_memorizer_state_due_date ON memorizer_progress (state, due_date);`,
+    );
 
     console.log('✅ Added "state" and "lapses" columns to memorizer_progress table.');
 
