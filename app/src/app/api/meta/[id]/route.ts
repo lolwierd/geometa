@@ -5,15 +5,13 @@ interface Location {
   images: any;
   raw_data: any;
 }
-type Context = {
-  params: {
-    id: string;
-  };
-};
 
-export async function GET(request: Request, context: Context) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, message: "Invalid ID" },
