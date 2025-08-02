@@ -46,7 +46,7 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 
 ### 🎨 Beautiful UI
 - **Card-based design** with country flags and preview images
-- **Rich content display** with HTML notes and reference images
+- **Rich content display** with HTML notes (sanitized via DOMPurify) and reference images
 - **Detailed modal view** for studying individual locations
 - **Image carousel** for locations with multiple reference photos
 - **Responsive layout** that adapts to any screen size
