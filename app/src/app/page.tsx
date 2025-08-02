@@ -11,12 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, RefreshCw, MapPin, Database, Globe } from "lucide-react";
+import { Search, RefreshCw, MapPin, Database, Globe, BrainCircuit } from "lucide-react";
 import {
   MultiSelectComboBox,
   Option,
 } from "@/components/ui/multi-select-combobox";
 import MetaCard from "@/components/MetaCard";
+import Link from "next/link";
 
 interface Location {
   id: number;
@@ -132,7 +133,7 @@ export default function Home() {
   useEffect(() => {
     fetchLocations(true);
     // We intentionally omit pagination.offset from deps to avoid infinite loop
-  }, [searchTerm, selectedCountries, pagination.limit]);
+  }, [searchTerm, selectedCountries, pagination.limit, fetchLocations]);
 
   // Auto-refresh when the tab becomes visible or the window gains focus
   useEffect(() => {
@@ -219,13 +220,23 @@ export default function Home() {
       <div className="container mx-auto px-2 py-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 text-white">
-            GeoMeta <span className="text-blue-400">Gallery</span>
-          </h1>
-          <p className="text-slate-300 mb-4">
-            Your personal collection of GeoGuessr meta clues and learning
-            materials
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold mb-2 text-white">
+                GeoMeta <span className="text-blue-400">Gallery</span>
+              </h1>
+              <p className="text-slate-300">
+                Your personal collection of GeoGuessr meta clues and learning
+                materials
+              </p>
+            </div>
+            <Link href="/memorizer" className="mt-4 sm:mt-0">
+                <Button variant="outline" className="w-full sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    Memorizer
+                </Button>
+            </Link>
+          </div>
 
           {/* Stats */}
           <div className="flex gap-4 text-sm text-slate-400">

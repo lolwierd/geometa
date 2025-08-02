@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +17,7 @@ import {
   ChevronRight,
   ChevronUp,
   MapPin,
+  X,
 } from "lucide-react";
 
 export default function MetaCard({ location, onDelete }) {
@@ -146,10 +149,11 @@ export default function MetaCard({ location, onDelete }) {
           <div className="flex-grow">
             <div className="flex items-center gap-2 mb-3">
               {location.country_code && (
-                <img
+                <Image
                   src={proxyUrl(`https://flagcdn.com/40x30/${location.country_code.toLowerCase()}.png`)} width={20} height={15}
                   alt={`${location.country} flag`}
                   className="rounded-sm"
+                  unoptimized
                   onError={(e) => (e.target.style.display = "none")}
                 />
               )}
@@ -174,10 +178,13 @@ export default function MetaCard({ location, onDelete }) {
             {images.length > 0 && (
               <div className="relative rounded-md overflow-hidden bg-slate-900 group/image">
                 <div className="aspect-video">
-                  <img
+                  <Image
                     src={proxyUrl(images[0])}
                     alt="Location meta image"
+                    width={320}
+                    height={180}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    unoptimized
                     onError={(e) => handleImageError(images[0])}
                   />
                 </div>
@@ -222,7 +229,8 @@ export default function MetaCard({ location, onDelete }) {
       <Dialog open={showModal} onOpenChange={handleModalOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-800 border-slate-600 text-white p-0 break-words">
           <DialogHeader className="flex-shrink-0 p-4 bg-slate-900/50">
-            <DialogTitle className="flex justify-between items-center gap-4 text-white">
+            <div className="flex items-center justify-between gap-4 w-full">
+            <DialogTitle className="flex justify-between items-center gap-4 text-white flex-1">
               <div className="flex items-center gap-3">
                 {location.country_code && (
                   <>
@@ -235,18 +243,20 @@ export default function MetaCard({ location, onDelete }) {
                         title="Open source link"
                         className="flex-shrink-0"
                       >
-                        <img
+                        <Image
                           src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                           alt={`${location.country} flag`}
                           className="rounded-sm border-slate-600 hover:border-blue-400 transition-colors"
+                          unoptimized
                           onError={(e) => (e.target.style.display = "none")}
                         />
                       </a>
                     ) : (
-                      <img
+                      <Image
                         src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                         alt={`${location.country} flag`}
                         className="rounded-sm border-slate-600 flex-shrink-0"
+                        unoptimized
                         onError={(e) => (e.target.style.display = "none")}
                       />
                     )}
@@ -260,6 +270,17 @@ export default function MetaCard({ location, onDelete }) {
                 </span>
               )}
             </DialogTitle>
+            <DialogClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-slate-700/50 flex-shrink-0"
+                title="Close"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          </div>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-scroll p-6 space-y-6 [scrollbar-gutter:stable]">
@@ -272,10 +293,13 @@ export default function MetaCard({ location, onDelete }) {
             {images.length > 0 && (
               <div className="space-y-2">
                 <div className="relative rounded-lg overflow-hidden bg-slate-900/50 border border-slate-700">
-                  <img
+                  <Image
                     src={proxyUrl(images[currentImageIndex])}
                     alt={`Meta image ${currentImageIndex + 1}`}
+                    width={1920}
+                    height={1080}
                     className="w-full max-h-[60vh] object-contain rounded-md"
+                    unoptimized
                     onError={(e) => handleImageError(images[currentImageIndex])}
                   />
 

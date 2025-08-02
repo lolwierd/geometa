@@ -11,6 +11,7 @@ import {
   Download,
   AlertTriangle,
   X,
+  BrainCircuit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 interface Screenshot {
   id: number;
@@ -190,14 +192,22 @@ export default function Gallery() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Meta Gallery</h1>
-          <p className="text-muted-foreground mt-1">
-            {filteredScreenshots.length} screenshot
-            {filteredScreenshots.length !== 1 ? "s" : ""}
-            {filteredScreenshots.length !== screenshots.length &&
-              ` of ${screenshots.length} total`}
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Meta Gallery</h1>
+            <p className="text-muted-foreground mt-1">
+              {filteredScreenshots.length} screenshot
+              {filteredScreenshots.length !== 1 ? "s" : ""}
+              {filteredScreenshots.length !== screenshots.length &&
+                ` of ${screenshots.length} total`}
+            </p>
+          </div>
+          <Link href="/memorizer">
+            <Button variant="outline" className="ml-auto">
+              <BrainCircuit className="mr-2 h-4 w-4" />
+              Memorizer
+            </Button>
+          </Link>
         </div>
       </div>
 
