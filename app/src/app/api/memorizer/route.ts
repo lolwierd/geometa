@@ -14,13 +14,24 @@ function calculateNextReview(
   easeFactor: number,
   interval: number,
 ) {
-  if (quality < 3) {
-    // Failed recall, reset repetitions and interval
+  // Learning phase for brand new cards: if a new card is marked hard,
+  // show it again shortly instead of waiting a full day
+  if (repetitions === 0 && quality < 3) {
     return {
       repetitions: 0,
       easeFactor,
-      interval: 1, // Show again tomorrow
-    };
+      interval: 0,
+      reviewDelayMinutes: 5,
+    } as const;
+  }
+
+  if (quality < 3) {
+    // Lapsed card: dramatically reduce the interval but don't reset to a single day
+    return {
+      repetitions: 0,
+      easeFactor,
+      interval: 7, // Revisit in about a week
+    } as const;
   }
 
   let newRepetitions;
@@ -48,7 +59,7 @@ function calculateNextReview(
     repetitions: newRepetitions,
     easeFactor: newEaseFactor,
     interval: newInterval,
-  };
+  } as const;
 }
 
 // GET: Fetch the next card to review
@@ -90,9 +101,23 @@ export async function GET() {
       );
     }
 
+    // Gather simple statistics for UI display
+    const counts = db
+      .prepare(
+        `
+        SELECT
+          SUM(CASE WHEN mp.id IS NULL OR (mp.repetitions = 0 AND mp.due_date <= CURRENT_TIMESTAMP) THEN 1 ELSE 0 END) AS new_due,
+          SUM(CASE WHEN mp.repetitions > 0 AND mp.due_date <= CURRENT_TIMESTAMP THEN 1 ELSE 0 END) AS review_due
+        FROM locations l
+        LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
+      `,
+      )
+      .get() as { new_due: number; review_due: number };
+
     return NextResponse.json({
       success: true,
       locationId: (nextCard as any).id,
+      stats: { new: counts.new_due ?? 0, review: counts.review_due ?? 0 },
     });
   } catch (error) {
     console.error("Error fetching next card:", error);
@@ -129,7 +154,7 @@ export async function POST(request: Request) {
         .get(locationId) as Progress;
     }
 
-    const { repetitions, easeFactor, interval } = calculateNextReview(
+    const { repetitions, easeFactor, interval, reviewDelayMinutes } = calculateNextReview(
       quality,
       progress.repetitions,
       progress.ease_factor,
@@ -137,7 +162,11 @@ export async function POST(request: Request) {
     );
 
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + interval);
+    if (reviewDelayMinutes) {
+      dueDate.setMinutes(dueDate.getMinutes() + reviewDelayMinutes);
+    } else {
+      dueDate.setDate(dueDate.getDate() + interval);
+    }
 
     db.prepare(
       `

@@ -27,6 +27,7 @@ export default function MemorizerPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<{ new: number; review: number } | null>(null);
 
   const fetchNextCard = useCallback(async () => {
     setLoading(true);
@@ -39,7 +40,8 @@ export default function MemorizerPage() {
       if (!memorizerRes.ok || !memorizerData.success) {
         throw new Error(memorizerData.message || "Could not get next card.");
       }
-      const { locationId } = memorizerData;
+      const { locationId, stats: newStats } = memorizerData;
+      setStats(newStats);
 
       const metaRes = await fetch(`/api/meta/${locationId}`);
       const metaData = await metaRes.json();
@@ -62,9 +64,6 @@ export default function MemorizerPage() {
 
   const handleUpdateProgress = async (quality: number) => {
     if (!location) return;
-
-    fetchNextCard();
-
     try {
       await fetch("/api/memorizer", {
         method: "POST",
@@ -73,6 +72,8 @@ export default function MemorizerPage() {
       });
     } catch (error) {
       console.error("Failed to update progress:", error);
+    } finally {
+      fetchNextCard();
     }
   };
 
@@ -158,8 +159,10 @@ export default function MemorizerPage() {
               <span className="hidden sm:inline">Meta Memorizer</span>
             </h1>
             <div className="w-10 sm:w-36 text-right">
-              {location && !loading && (
-                <span className="text-xs sm:text-sm text-slate-500">{location.id}</span>
+              {stats && !loading && (
+                <span className="text-xs sm:text-sm text-slate-500">
+                  {stats.new} new, {stats.review} reviews
+                </span>
               )}
             </div>
           </div>
