@@ -15,6 +15,8 @@ function migrate() {
       ease_factor REAL NOT NULL DEFAULT 2.5, -- A factor controlling interval growth
       "interval" INTEGER NOT NULL DEFAULT 0, -- Days until next review
       due_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      state TEXT NOT NULL DEFAULT 'new',
+      lapses INTEGER NOT NULL DEFAULT 0,
       -- Timestamps
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -25,6 +27,7 @@ function migrate() {
   // Create indexes for performance
   db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_due_date ON memorizer_progress (due_date);`);
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_memorizer_location_id ON memorizer_progress (location_id);`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_state ON memorizer_progress (state);`);
 
   // Trigger to automatically update the 'updated_at' timestamp
   db.exec(`

@@ -22,6 +22,9 @@ function migrate() {
       ADD COLUMN lapses INTEGER NOT NULL DEFAULT 0;
     `);
 
+    // Index the state column for faster lookups
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_memorizer_state ON memorizer_progress (state);`);
+
     console.log('✅ Added "state" and "lapses" columns to memorizer_progress table.');
 
   } catch (error) {
