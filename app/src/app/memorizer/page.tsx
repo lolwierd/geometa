@@ -5,23 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, Loader2, AlertTriangle, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import MemorizerCard from "@/components/MemorizerCard"; // Use the new component
-
-// This is the full Location type that MemorizerCard expects
-interface Location {
-  id: number;
-  pano_id: string;
-  map_id: string;
-  country: string;
-  country_code: string | null;
-  meta_name: string | null;
-  note: string | null;
-  footer: string | null;
-  images: string[];
-  raw_data: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
+import MemorizerCard, { Location } from "@/components/MemorizerCard.tsx"; // Use the new component
 
 export default function MemorizerPage() {
   const [location, setLocation] = useState<Location | null>(null);
