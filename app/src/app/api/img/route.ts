@@ -63,9 +63,10 @@ export async function GET(request: NextRequest) {
       throw new Error("Unsupported protocol");
     }
     // Allow only learnablemeta.com (and subdomains) to be proxied
-    const allowedBase = "learnablemeta.com";
+    const allowedBases = ["learnablemeta.com", "flagcdn.com"];
     const host = remoteURL.hostname.toLowerCase();
-    if (host !== allowedBase && !host.endsWith(`.${allowedBase}`)) {
+    const allowed = allowedBases.some((base) => host === base || host.endsWith(`.${base}`));
+    if (!allowed) {
       throw new Error("Host not allowed");
     }
   } catch {

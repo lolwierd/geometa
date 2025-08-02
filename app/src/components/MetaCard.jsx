@@ -147,7 +147,7 @@ export default function MetaCard({ location, onDelete }) {
             <div className="flex items-center gap-2 mb-3">
               {location.country_code && (
                 <img
-                  src={`https://flagcdn.com/20x15/${location.country_code.toLowerCase()}.png`}
+                  src={proxyUrl(`https://flagcdn.com/40x30/${location.country_code.toLowerCase()}.png`)} width={20} height={15}
                   alt={`${location.country} flag`}
                   className="rounded-sm"
                   onError={(e) => (e.target.style.display = "none")}
@@ -236,17 +236,17 @@ export default function MetaCard({ location, onDelete }) {
                         className="flex-shrink-0"
                       >
                         <img
-                          src={`https://flagcdn.com/32x24/${location.country_code.toLowerCase()}.png`}
+                          src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                           alt={`${location.country} flag`}
-                          className="rounded-sm border-2 border-slate-600 hover:border-blue-400 transition-colors"
+                          className="rounded-sm border-slate-600 hover:border-blue-400 transition-colors"
                           onError={(e) => (e.target.style.display = "none")}
                         />
                       </a>
                     ) : (
                       <img
-                        src={`https://flagcdn.com/32x24/${location.country_code.toLowerCase()}.png`}
+                        src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                         alt={`${location.country} flag`}
-                        className="rounded-sm border-2 border-slate-600 flex-shrink-0"
+                        className="rounded-sm border-slate-600 flex-shrink-0"
                         onError={(e) => (e.target.style.display = "none")}
                       />
                     )}
@@ -307,11 +307,10 @@ export default function MetaCard({ location, onDelete }) {
                       <button
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
-                        className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                          index === currentImageIndex
-                            ? "bg-blue-500"
-                            : "bg-slate-600 hover:bg-slate-500"
-                        }`}
+                        className={`w-2.5 h-2.5 rounded-full transition-colors ${index === currentImageIndex
+                          ? "bg-blue-500"
+                          : "bg-slate-600 hover:bg-slate-500"
+                          }`}
                         title={`Image ${index + 1}`}
                       />
                     ))}
@@ -396,9 +395,8 @@ export default function MetaCard({ location, onDelete }) {
               title={showTechDetails ? "Hide details" : "Show details"}
             >
               <ChevronUp
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  !showTechDetails && "rotate-180"
-                }`}
+                className={`h-4 w-4 transition-transform duration-200 ${!showTechDetails && "rotate-180"
+                  }`}
               />
             </Button>
           </div>
