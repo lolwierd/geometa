@@ -10,7 +10,7 @@ interface Progress {
 }
 
 // Simple SM-2 algorithm implementation
-function calculateNextReview(
+export function calculateNextReview(
   quality: number,
   repetitions: number,
   easeFactor: number,
