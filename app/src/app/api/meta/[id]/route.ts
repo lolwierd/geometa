@@ -8,10 +8,10 @@ interface Location {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: { id: string } },
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    const id = parseInt(context.params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
         { success: false, message: "Invalid ID" },
