@@ -193,7 +193,12 @@ export async function POST(request: Request) {
   try {
     const { locationId, quality } = await request.json();
 
-    if (!locationId || quality === undefined || quality < 0 || quality > 5) {
+    if (
+      typeof locationId !== "number" ||
+      !Number.isInteger(quality) ||
+      quality < 0 ||
+      quality > 5
+    ) {
       return NextResponse.json(
         { success: false, message: "Invalid input" },
         { status: 400 },
