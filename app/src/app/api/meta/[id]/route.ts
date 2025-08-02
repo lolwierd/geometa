@@ -1,6 +1,11 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+interface Location {
+  images: any;
+  raw_data: any;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
@@ -14,7 +19,9 @@ export async function GET(
       );
     }
 
-    const location = db.prepare("SELECT * FROM locations WHERE id = ?").get(id);
+    const location = db
+      .prepare("SELECT * FROM locations WHERE id = ?")
+      .get(id) as Location;
 
     if (!location) {
       return NextResponse.json(

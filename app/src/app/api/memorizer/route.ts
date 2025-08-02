@@ -1,6 +1,12 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+interface Progress {
+  repetitions: number;
+  ease_factor: number;
+  interval: number;
+}
+
 // Simple SM-2 algorithm implementation
 function calculateNextReview(
   quality: number,
@@ -32,7 +38,8 @@ function calculateNextReview(
     newInterval = Math.round(interval * easeFactor);
   }
 
-  newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  newEaseFactor =
+    easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
   if (newEaseFactor < 1.3) {
     newEaseFactor = 1.3;
   }
@@ -83,7 +90,10 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ success: true, locationId: nextCard.id });
+    return NextResponse.json({
+      success: true,
+      locationId: (nextCard as any).id,
+    });
   } catch (error) {
     console.error("Error fetching next card:", error);
     return NextResponse.json(
@@ -108,19 +118,18 @@ export async function POST(request: Request) {
     // Get current progress or initialize a new one
     let progress = db
       .prepare("SELECT * FROM memorizer_progress WHERE location_id = ?")
-      .get(locationId);
+      .get(locationId) as Progress;
 
     if (!progress) {
-        db.prepare("INSERT INTO memorizer_progress (location_id) VALUES (?)").run(locationId);
-        progress = db.prepare("SELECT * FROM memorizer_progress WHERE location_id = ?").get(locationId);
+      db.prepare("INSERT INTO memorizer_progress (location_id) VALUES (?)").run(
+        locationId,
+      );
+      progress = db
+        .prepare("SELECT * FROM memorizer_progress WHERE location_id = ?")
+        .get(locationId) as Progress;
     }
 
-
-    const {
-      repetitions,
-      easeFactor,
-      interval,
-    } = calculateNextReview(
+    const { repetitions, easeFactor, interval } = calculateNextReview(
       quality,
       progress.repetitions,
       progress.ease_factor,
@@ -140,13 +149,7 @@ export async function POST(request: Request) {
         due_date = ?
       WHERE location_id = ?
     `,
-    ).run(
-      repetitions,
-      easeFactor,
-      interval,
-      dueDate.toISOString(),
-      locationId,
-    );
+    ).run(repetitions, easeFactor, interval, dueDate.toISOString(), locationId);
 
     return NextResponse.json({ success: true, message: "Progress updated" });
   } catch (error) {

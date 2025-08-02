@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint && npm run type-check",
+    "type-check": "tsc --noEmit",
     "db:init": "node db/schema-new.mjs",
     "db:migrate": "node db/schema-new.mjs",
     "db:backup": "cp db/geometa.db db/geometa-backup-$(date +%Y%m%d-%H%M%S).db"
