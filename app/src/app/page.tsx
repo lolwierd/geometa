@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, RefreshCw, MapPin, Database, Globe } from "lucide-react";
-import { MultiSelectComboBox, Option } from "@/components/ui/multi-select-combobox";
+import {
+  MultiSelectComboBox,
+  Option,
+} from "@/components/ui/multi-select-combobox";
 import MetaCard from "@/components/MetaCard";
 
 interface Location {
@@ -335,7 +338,7 @@ export default function Home() {
                 ) : (
                   <div>
                     <p className="text-slate-300 mb-4">
-                      You haven't collected any locations yet. Install the
+                      You haven&apos;t collected any locations yet. Install the
                       userscript and play some GeoGuessr to start building your
                       collection!
                     </p>
