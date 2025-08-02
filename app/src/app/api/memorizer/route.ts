@@ -91,7 +91,15 @@ export async function GET() {
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       WHERE mp.due_date <= CURRENT_TIMESTAMP OR mp.id IS NULL
-      ORDER BY mp.due_date ASC, RANDOM()
+      ORDER BY
+        CASE
+          WHEN mp.state = 'lapsed' THEN 0
+          WHEN mp.state = 'review' THEN 1
+          WHEN mp.id IS NULL OR mp.state IN ('new', 'learning') THEN 2
+          ELSE 3
+        END,
+        mp.due_date ASC,
+        RANDOM()
       LIMIT 1
     `,
       )
@@ -141,21 +149,32 @@ export async function GET() {
           ) AS new_due,
           SUM(
             CASE
-              WHEN mp.state IN ('review', 'lapsed') AND mp.due_date <= CURRENT_TIMESTAMP
+              WHEN mp.state = 'review' AND mp.due_date <= CURRENT_TIMESTAMP
                 THEN 1
               ELSE 0
             END
-          ) AS review_due
+          ) AS review_due,
+          SUM(
+            CASE
+              WHEN mp.state = 'lapsed' AND mp.due_date <= CURRENT_TIMESTAMP
+                THEN 1
+              ELSE 0
+            END
+          ) AS lapsed_due
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       `,
       )
-      .get() as { new_due: number; review_due: number };
+      .get() as { new_due: number; review_due: number; lapsed_due: number };
 
     return NextResponse.json({
       success: true,
       locationId: (nextCard as any).id,
-      stats: { new: counts.new_due ?? 0, review: counts.review_due ?? 0 },
+      stats: {
+        new: counts.new_due ?? 0,
+        review: counts.review_due ?? 0,
+        lapsed: counts.lapsed_due ?? 0,
+      },
     });
   } catch (error) {
     console.error("Error fetching next card:", error);
