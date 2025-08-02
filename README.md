@@ -63,6 +63,11 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 - **Technical metadata** for debugging and reference
 - **Export capabilities** built into the data structure
 
+### 🧠 Spaced Repetition Memorizer
+- Built-in study mode using a simplified SM-2 algorithm
+- "Good" answers progress intervals like 1 → 6 → 15 days
+- "Easy" answers add a 30% bonus after the second review for 1 → 6 → 20 days
+
 ## 🚀 Quick Start
 
 ### 1. Prerequisites

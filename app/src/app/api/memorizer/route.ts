@@ -62,6 +62,9 @@ function calculateNextReview(
   } else {
     newRepetitions = repetitions + 1;
     newInterval = Math.round(interval * easeFactor);
+    if (quality === 5) {
+      newInterval = Math.round(newInterval * 1.3);
+    }
     newState = "review";
   }
 

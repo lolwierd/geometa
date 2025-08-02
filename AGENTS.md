@@ -56,7 +56,7 @@ Welcome to GeoMeta! This repository houses a Next.js application in `app/` along
 - **Feedback handling:**
   - `Hard` (quality 1): new cards reappear within the session; previously learned cards become *lapsed* and are rescheduled for 7 days later.
   - `Good` (quality 3): increases the interval (e.g., 1 → 6 → 15 days).
-  - `Easy` (quality 5): expands the interval beyond `Good` for well-known cards.
+  - `Easy` (quality 5): from the second review onward applies a 1.3× bonus (e.g., 1 → 6 → 20 days).
 - **Review stats:** the API exposes counts of due new and review cards so the UI can display daily progress.
 
 Happy hacking!
