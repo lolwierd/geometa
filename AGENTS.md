@@ -18,6 +18,7 @@ Welcome to GeoMeta! This repository houses a Next.js application in `app/` along
 - Stick to async/await; await dynamic route params before property access.
 - Keep functions pure and side-effect free when possible.
 - Avoid console noise in committed code. Use descriptive variable names and comments sparingly.
+- Sanitize user-supplied HTML before rendering (use DOMPurify as in `MemorizerCard.jsx`).
 
 ## Testing & Checks
 - Run these before every commit:

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -49,6 +50,10 @@ export default function MemorizerCard({ location }) {
   };
 
   const footerLink = extractLink(location.footer);
+  // Sanitize user-provided HTML to avoid XSS issues
+  const sanitizedNote = location.note
+    ? DOMPurify.sanitize(location.note)
+    : "";
 
   // --- EFFECT FOR AUTO-SCROLL ---
   useEffect(() => {
@@ -112,7 +117,7 @@ export default function MemorizerCard({ location }) {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 [scrollbar-gutter:stable]">
         {location.note && (
           <div className="prose prose-invert prose-slate max-w-none text-base">
-            <div dangerouslySetInnerHTML={{ __html: location.note }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizedNote }} />
           </div>
         )}
 
