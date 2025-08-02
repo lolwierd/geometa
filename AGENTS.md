@@ -49,4 +49,13 @@ Welcome to GeoMeta! This repository houses a Next.js application in `app/` along
 - Be mindful of accessibility and responsive design in UI components.
 - Additional nested `AGENTS.md` files can override these rules for their subdirectories.
 
+## Memorizer Algorithm
+- The spaced-repetition system uses a simplified SM-2 approach.
+- **Card selection:** prioritizes due cards (new or scheduled for today/past) and chooses the most overdue; if none are due, shows the least-reviewed cards.
+- **Feedback handling:**
+  - `Hard` (quality 1): new cards reappear within the session; previously learned cards become *lapsed* and are rescheduled for 7 days later.
+  - `Good` (quality 3): increases the interval (e.g., 1 → 6 → 15 days).
+  - `Easy` (quality 5): expands the interval beyond `Good` for well-known cards.
+- **Review stats:** the API exposes counts of due new and review cards so the UI can display daily progress.
+
 Happy hacking!
