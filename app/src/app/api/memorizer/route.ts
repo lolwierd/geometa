@@ -41,9 +41,9 @@ export function calculateNextReview(
   let newState = state;
   let newLapses = lapses;
 
-  // Brand new card answered hard: keep it in learning and reshow
-  // it shortly instead of waiting a full day or counting a lapse
-  if (repetitions === 0 && quality < 3 && state !== "lapsed") {
+  // Brand new card answered "hard": keep it in learning and reshow
+  // it shortly instead of waiting a full day
+  if (repetitions === 0 && quality === 2 && state !== "lapsed") {
     return {
       repetitions: 0,
       easeFactor,
@@ -54,7 +54,7 @@ export function calculateNextReview(
     } as const;
   }
 
-  if (quality < 3) {
+  if (quality === 0) {
     // Lapsed card: dramatically reduce the interval but don't reset to a single day
     newLapses += 1;
     const newEaseFactor = Math.max(1.3, easeFactor - 0.2);
@@ -77,13 +77,17 @@ export function calculateNextReview(
     newState = "learning";
   } else if (repetitions === 1) {
     newRepetitions = 2;
-    newInterval = 6;
+    newInterval = quality === 2 ? 3 : 6;
     newState = "review";
   } else {
     newRepetitions = repetitions + 1;
-    newInterval = Math.round(interval * easeFactor);
-    if (quality === 5) {
-      newInterval = Math.round(newInterval * 1.3);
+    if (quality === 2) {
+      newInterval = Math.max(1, Math.round(interval / 2));
+    } else {
+      newInterval = Math.round(interval * easeFactor);
+      if (quality === 5) {
+        newInterval = Math.round(newInterval * 1.3);
+      }
     }
     newState = "review";
   }
@@ -113,17 +117,17 @@ export async function GET() {
       SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      WHERE datetime(mp.due_date) <= CURRENT_TIMESTAMP OR mp.id IS NULL
+      WHERE mp.due_date <= strftime('%s','now') OR mp.id IS NULL
       ORDER BY
         CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
-        datetime(mp.due_date) ASC,
+        mp.due_date ASC,
         CASE
           WHEN mp.state = 'lapsed' THEN 0
           WHEN mp.state = 'review' THEN 1
           WHEN mp.id IS NULL OR mp.state IN ('new', 'learning') THEN 2
           ELSE 3
         END,
-        RANDOM()
+        l.id ASC
       LIMIT 1
     `,
       )
@@ -131,7 +135,7 @@ export async function GET() {
 
     // If no cards are due, just pick a random one that has been seen least
     if (!nextCard) {
-      nextCard = db
+      const candidates = db
         .prepare(
           `
         SELECT l.*
@@ -145,11 +149,15 @@ export async function GET() {
             ELSE 3
           END,
           mp.repetitions ASC,
-          RANDOM()
-        LIMIT 1
+          l.id ASC
+        LIMIT 10
       `,
         )
-        .get() as LocationRow | undefined;
+        .all() as LocationRow[];
+
+      if (candidates.length > 0) {
+        nextCard = candidates[Math.floor(Math.random() * candidates.length)];
+      }
     }
 
     if (!nextCard) {
@@ -166,21 +174,21 @@ export async function GET() {
         SELECT
           SUM(
             CASE
-              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND datetime(mp.due_date) <= CURRENT_TIMESTAMP)
+              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS new_due,
           SUM(
             CASE
-              WHEN mp.state = 'review' AND datetime(mp.due_date) <= CURRENT_TIMESTAMP
+              WHEN mp.state = 'review' AND mp.due_date <= strftime('%s','now')
                 THEN 1
               ELSE 0
             END
           ) AS review_due,
           SUM(
             CASE
-              WHEN mp.state = 'lapsed' AND datetime(mp.due_date) <= CURRENT_TIMESTAMP
+              WHEN mp.state = 'lapsed' AND mp.due_date <= strftime('%s','now')
                 THEN 1
               ELSE 0
             END
@@ -248,11 +256,11 @@ export async function POST(request: Request) {
   try {
     const { locationId, quality } = await request.json();
 
+    const allowedQualities = new Set([0, 2, 3, 5]);
     if (
       typeof locationId !== "number" ||
       !Number.isInteger(quality) ||
-      quality < 0 ||
-      quality > 5
+      !allowedQualities.has(quality)
     ) {
       return NextResponse.json(
         { success: false, message: "Invalid input" },
@@ -296,6 +304,7 @@ export async function POST(request: Request) {
     } else {
       dueDate.setDate(dueDate.getDate() + interval);
     }
+    const dueTimestamp = Math.floor(dueDate.getTime() / 1000);
 
     db.prepare(
       `
@@ -306,7 +315,7 @@ export async function POST(request: Request) {
         "interval" = ?,
         state = ?,
         lapses = ?,
-        due_date = datetime(?)
+        due_date = ?
       WHERE location_id = ?
     `,
     ).run(
@@ -315,7 +324,7 @@ export async function POST(request: Request) {
       interval,
       state,
       lapses,
-      dueDate.toISOString(),
+      dueTimestamp,
       locationId,
     );
 
