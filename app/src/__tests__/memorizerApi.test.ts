@@ -19,7 +19,7 @@ describe('memorizer API', () => {
         repetitions INTEGER NOT NULL DEFAULT 0,
         ease_factor REAL NOT NULL DEFAULT 2.5,
         "interval" INTEGER NOT NULL DEFAULT 0,
-        due_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        due_date INTEGER NOT NULL DEFAULT (strftime('%s','now')),
         state TEXT NOT NULL DEFAULT 'new',
         lapses INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -41,9 +41,9 @@ describe('memorizer API', () => {
 
     const { due_date } = db
       .prepare('SELECT due_date FROM memorizer_progress WHERE location_id = ?')
-      .get(1) as { due_date: string };
-    const pastIso = new Date(Date.parse(due_date) - 2 * 24 * 60 * 60 * 1000).toISOString();
-    db.prepare('UPDATE memorizer_progress SET due_date = ? WHERE location_id = ?').run(pastIso, 1);
+      .get(1) as { due_date: number };
+    const pastTs = due_date - 2 * 24 * 60 * 60;
+    db.prepare('UPDATE memorizer_progress SET due_date = ? WHERE location_id = ?').run(pastTs, 1);
 
     const res = await GET();
     const data = await res.json();
