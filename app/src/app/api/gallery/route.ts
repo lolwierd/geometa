@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Database from "better-sqlite3";
+import { logger } from "@/lib/logger";
 
 const db = new Database("db/geometa.db");
 
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100); // Cap at 100
     const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
 
-    console.log("🔍 Gallery API request:", { country, search, limit, offset });
+    logger.info("🔍 Gallery API request:", { country, search, limit, offset });
 
     let query: string;
     let countQuery: string;
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
       total_countries: number;
     };
 
-    console.log(
+    logger.info(
       `✅ Gallery API: Returning ${processedLocations.length}/${total} locations`,
     );
 
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ Gallery API error:", error);
+    logger.error("❌ Gallery API error:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch gallery data",
@@ -173,7 +174,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`🗑️ Deleting location with ID: ${id}`);
+    logger.info(`🗑️ Deleting location with ID: ${id}`);
 
     // Check if location exists
     const existingLocation = db
@@ -198,7 +199,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(
+    logger.info(
       `✅ Successfully deleted location: ${existingLocation.country} - ${existingLocation.meta_name || "Unknown"}`,
     );
 
@@ -208,7 +209,7 @@ export async function DELETE(request: NextRequest) {
       deleted: existingLocation,
     });
   } catch (error) {
-    console.error("❌ Delete location error:", error);
+    logger.error("❌ Delete location error:", error);
     return NextResponse.json(
       {
         error: "Failed to delete location",
@@ -228,7 +229,7 @@ function safeJsonParse<T>(jsonString: string, fallback: T): T {
     const parsed = JSON.parse(jsonString);
     return parsed !== null && parsed !== undefined ? parsed : fallback;
   } catch (error) {
-    console.warn("Failed to parse JSON:", jsonString, error);
+    logger.warn("Failed to parse JSON:", jsonString, error);
     return fallback;
   }
 }

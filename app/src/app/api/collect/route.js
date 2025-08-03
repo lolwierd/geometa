@@ -1,211 +1,9 @@
 import { NextResponse } from "next/server";
 import Database from "better-sqlite3";
+import { getCountryCode } from "@/lib/countryCodes";
+import { logger } from "@/lib/logger";
 
 const db = new Database("db/geometa.db");
-
-// Country code mapping for flag display
-const COUNTRY_CODE_MAP = {
-  Afghanistan: "af",
-  Albania: "al",
-  Algeria: "dz",
-  Andorra: "ad",
-  Angola: "ao",
-  "Antigua and Barbuda": "ag",
-  Argentina: "ar",
-  Armenia: "am",
-  Australia: "au",
-  Austria: "at",
-  Azerbaijan: "az",
-  Bahamas: "bs",
-  Bahrain: "bh",
-  Bangladesh: "bd",
-  Barbados: "bb",
-  Belarus: "by",
-  Belgium: "be",
-  Belize: "bz",
-  Benin: "bj",
-  Bhutan: "bt",
-  Bolivia: "bo",
-  "Bosnia and Herzegovina": "ba",
-  Botswana: "bw",
-  Brazil: "br",
-  Brunei: "bn",
-  Bulgaria: "bg",
-  "Burkina Faso": "bf",
-  Burundi: "bi",
-  "Cabo Verde": "cv",
-  Cambodia: "kh",
-  Cameroon: "cm",
-  Canada: "ca",
-  "Central African Republic": "cf",
-  Chad: "td",
-  Chile: "cl",
-  China: "cn",
-  Colombia: "co",
-  Comoros: "km",
-  Congo: "cg",
-  "Costa Rica": "cr",
-  Croatia: "hr",
-  Cuba: "cu",
-  Curacao: "cw",
-  Cyprus: "cy",
-  Czechia: "cz",
-  "Czech Republic": "cz",
-  "Christmas Island": "cx",
-  "Democratic Republic of the Congo": "cd",
-  Denmark: "dk",
-  Djibouti: "dj",
-  Dominica: "dm",
-  "Dominican Republic": "do",
-  Ecuador: "ec",
-  Egypt: "eg",
-  "El Salvador": "sv",
-  "Equatorial Guinea": "gq",
-  Eritrea: "er",
-  Estonia: "ee",
-  Eswatini: "sz",
-  Ethiopia: "et",
-  Fiji: "fj",
-  Finland: "fi",
-  France: "fr",
-  Gabon: "ga",
-  Gambia: "gm",
-  Georgia: "ge",
-  Germany: "de",
-  Ghana: "gh",
-  Greece: "gr",
-  Grenada: "gd",
-  Guatemala: "gt",
-  Guinea: "gn",
-  "Guinea-Bissau": "gw",
-  Guyana: "gy",
-  Haiti: "ht",
-  Honduras: "hn",
-  Hungary: "hu",
-  Iceland: "is",
-  India: "in",
-  Indonesia: "id",
-  Iran: "ir",
-  Iraq: "iq",
-  Ireland: "ie",
-  Israel: "il",
-  Italy: "it",
-  Jamaica: "jm",
-  Japan: "jp",
-  Jordan: "jo",
-  Kazakhstan: "kz",
-  Kenya: "ke",
-  Kiribati: "ki",
-  Kuwait: "kw",
-  Kyrgyzstan: "kg",
-  Laos: "la",
-  Latvia: "lv",
-  Lebanon: "lb",
-  Lesotho: "ls",
-  Liberia: "lr",
-  Libya: "ly",
-  Liechtenstein: "li",
-  Lithuania: "lt",
-  Luxembourg: "lu",
-  Madagascar: "mg",
-  Malawi: "mw",
-  Malaysia: "my",
-  Maldives: "mv",
-  Mali: "ml",
-  Malta: "mt",
-  "Marshall Islands": "mh",
-  Mauritania: "mr",
-  Mauritius: "mu",
-  Mexico: "mx",
-  Micronesia: "fm",
-  Moldova: "md",
-  Monaco: "mc",
-  Mongolia: "mn",
-  Montenegro: "me",
-  Morocco: "ma",
-  Mozambique: "mz",
-  Myanmar: "mm",
-  Namibia: "na",
-  Nauru: "nr",
-  Nepal: "np",
-  Netherlands: "nl",
-  "New Zealand": "nz",
-  Nicaragua: "ni",
-  Niger: "ne",
-  Nigeria: "ng",
-  "North Korea": "kp",
-  "North Macedonia": "mk",
-  Norway: "no",
-  Oman: "om",
-  Pakistan: "pk",
-  Palau: "pw",
-  "Palestine State": "ps",
-  Panama: "pa",
-  "Papua New Guinea": "pg",
-  Paraguay: "py",
-  Peru: "pe",
-  Philippines: "ph",
-  Poland: "pl",
-  Portugal: "pt",
-  "Puerto Rico": "pr",
-  Qatar: "qa",
-  Romania: "ro",
-  Russia: "ru",
-  Rwanda: "rw",
-  "Saint Kitts and Nevis": "kn",
-  "Saint Lucia": "lc",
-  "Saint Vincent and the Grenadines": "vc",
-  Samoa: "ws",
-  "San Marino": "sm",
-  "Sao Tome and Principe": "st",
-  "Saudi Arabia": "sa",
-  Senegal: "sn",
-  Serbia: "rs",
-  Seychelles: "sc",
-  "Sierra Leone": "sl",
-  Singapore: "sg",
-  Slovakia: "sk",
-  Slovenia: "si",
-  "Solomon Islands": "sb",
-  Somalia: "so",
-  "South Africa": "za",
-  "South Korea": "kr",
-  "South Sudan": "ss",
-  Spain: "es",
-  "Sri Lanka": "lk",
-  Sudan: "sd",
-  Suriname: "sr",
-  Sweden: "se",
-  Switzerland: "ch",
-  Syria: "sy",
-  Taiwan: "tw",
-  Tajikistan: "tj",
-  Tanzania: "tz",
-  Thailand: "th",
-  "Timor-Leste": "tl",
-  Togo: "tg",
-  Tonga: "to",
-  "Trinidad and Tobago": "tt",
-  Tunisia: "tn",
-  Turkey: "tr",
-  Turkmenistan: "tm",
-  Tuvalu: "tv",
-  Uganda: "ug",
-  Ukraine: "ua",
-  "United Arab Emirates": "ae",
-  "United Kingdom": "gb",
-  "United States of America": "us",
-  "United States": "us",
-  Uruguay: "uy",
-  Uzbekistan: "uz",
-  Vanuatu: "vu",
-  "Vatican City": "va",
-  Venezuela: "ve",
-  Vietnam: "vn",
-  Yemen: "ye",
-  Zambia: "zm",
-  Zimbabwe: "zw",
-};
 
 async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   const params = new URLSearchParams({
@@ -217,7 +15,7 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
 
   const url = `https://learnablemeta.com/api/userscript/location?${params}`;
 
-  console.log(`🔄 Fetching meta data from LearnableMeta API: ${url}`);
+  logger.info(`🔄 Fetching meta data from LearnableMeta API: ${url}`);
 
   try {
     const response = await fetch(url, {
@@ -229,7 +27,7 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
       timeout: 10000, // 10 second timeout
     });
 
-    console.log(
+    logger.info(
       `📡 LearnableMeta API response: ${response.status} ${response.statusText}`,
     );
 
@@ -248,13 +46,13 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
     }
 
     const data = await response.json();
-    console.log(
+    logger.info(
       `✅ Successfully fetched meta data for ${data.country || "unknown country"}`,
     );
 
     return data;
   } catch (error) {
-    console.error("❌ Failed to fetch from LearnableMeta API:", error);
+    logger.error("❌ Failed to fetch from LearnableMeta API:", error);
 
     if (error.name === "AbortError" || error.message.includes("timeout")) {
       throw new Error("Request to LearnableMeta API timed out");
@@ -264,41 +62,19 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   }
 }
 
-function getCountryCode(countryName) {
-  if (!countryName) return null;
-
-  // Try exact match first
-  const exactMatch = COUNTRY_CODE_MAP[countryName];
-  if (exactMatch) return exactMatch;
-
-  // Try case-insensitive match
-  const lowerCountry = countryName.toLowerCase();
-  for (const [key, value] of Object.entries(COUNTRY_CODE_MAP)) {
-    if (key.toLowerCase() === lowerCountry) {
-      return value;
-    }
-  }
-
-  // Fallback: generate from country name
-  return countryName
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, "")
-    .replace(/\s+/g, "-")
-    .substring(0, 2);
-}
 
 export async function POST(request) {
   try {
-    console.log("🎯 New collect request received");
+    logger.info("🎯 New collect request received");
 
     const requestBody = await request.json();
     const { panoId, mapId, roundNumber = 1, source = "map" } = requestBody;
 
-    console.log("📋 Request data:", { panoId, mapId, roundNumber, source });
+    logger.info("📋 Request data:", { panoId, mapId, roundNumber, source });
 
     // Validate required fields
     if (!panoId || !mapId) {
-      console.log("❌ Missing required fields");
+      logger.info("❌ Missing required fields");
       return NextResponse.json(
         { error: "panoId and mapId are required" },
         {
@@ -318,7 +94,7 @@ export async function POST(request) {
     const metaData = await fetchLearnableMetaData(panoId, mapId, source);
 
     if (metaData.error) {
-      console.log(`⚠️ LearnableMeta API returned error: ${metaData.error}`);
+      logger.info(`⚠️ LearnableMeta API returned error: ${metaData.error}`);
       return NextResponse.json(metaData, {
         status: metaData.status || (metaData.notFound ? 404 : 500),
         headers: {
@@ -334,7 +110,7 @@ export async function POST(request) {
     // Extract and validate country code for flag display
     const countryCode = getCountryCode(metaData.country);
 
-    console.log(`🏁 Processed country: ${metaData.country} → ${countryCode}`);
+    logger.info(`🏁 Processed country: ${metaData.country} → ${countryCode}`);
 
     // Prepare data for database insertion
     const locationData = {
@@ -374,13 +150,13 @@ export async function POST(request) {
     let message;
 
     if (insertInfo.changes === 0) {
-      console.log("ℹ️ Location already exists in database (ON CONFLICT)");
+      logger.info("ℹ️ Location already exists in database (ON CONFLICT)");
       newLocation = db
         .prepare("SELECT * FROM locations WHERE raw_data = ?")
         .get(locationData.raw_data);
       message = "Location already exists";
     } else {
-      console.log(
+      logger.info(
         `💾 Stored location in database with ID: ${insertInfo.lastInsertRowid}`,
       );
       newLocation = db
@@ -389,7 +165,7 @@ export async function POST(request) {
       message = "Location collected successfully";
     }
 
-    console.log("✅ Successfully collected and stored location data");
+    logger.info("✅ Successfully collected and stored location data");
 
     return NextResponse.json(
       {
@@ -410,7 +186,7 @@ export async function POST(request) {
       },
     );
   } catch (error) {
-    console.error("💥 Error in collect API:", error);
+    logger.error("💥 Error in collect API:", error);
 
     // Return appropriate error response
     const errorMessage = error.message || "Failed to collect location data";
