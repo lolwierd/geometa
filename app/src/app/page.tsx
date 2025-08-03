@@ -159,13 +159,24 @@ export default function Home() {
   }, [fetchLocations]);
 
   // Infinite scroll observer to automatically fetch more locations
+  // Keep the latest fetchLocations in a ref so the observer callback is always fresh
+  const fetchRef = useRef(fetchLocations);
+  useEffect(() => {
+    fetchRef.current = fetchLocations;
+  }, [fetchLocations]);
+
+  const loadingRef = useRef(loading);
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
   useEffect(() => {
     const sentinel = loadMoreRef.current;
     if (!sentinel || !pagination.hasMore) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading) {
+        if (entries[0].isIntersecting && !loadingRef.current) {
           fetchRef.current(false);
         }
       },
@@ -174,7 +185,7 @@ export default function Home() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [pagination.hasMore, loading]);
+  }, [pagination.hasMore]);
 
   const scrollToTop = () => {
     if (typeof window !== "undefined") {
