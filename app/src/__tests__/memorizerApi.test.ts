@@ -65,5 +65,31 @@ describe('memorizer API', () => {
       lapsedTotal: 0,
     });
   });
+
+  it('validates allowed quality values', async () => {
+    const acceptAgain = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 1, quality: 0 }),
+      }),
+    );
+    expect(acceptAgain.status).toBe(200);
+
+    const acceptHard = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 1, quality: 2 }),
+      }),
+    );
+    expect(acceptHard.status).toBe(200);
+
+    const reject = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 1, quality: 4 }),
+      }),
+    );
+    expect(reject.status).toBe(400);
+  });
 });
 

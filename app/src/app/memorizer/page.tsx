@@ -115,13 +115,31 @@ export default function MemorizerPage() {
 
           {/* Review Buttons */}
           <div className="mt-8 flex-shrink-0 w-full max-w-lg flex flex-col sm:flex-row justify-around items-center gap-4">
-            <Button onClick={() => handleUpdateProgress(1)} variant="destructive" className="w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(0)}
+              variant="destructive"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
+              Again
+            </Button>
+            <Button
+              onClick={() => handleUpdateProgress(2)}
+              variant="secondary"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Hard
             </Button>
-            <Button onClick={() => handleUpdateProgress(3)} variant="secondary" className="w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(3)}
+              variant="secondary"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Good
             </Button>
-            <Button onClick={() => handleUpdateProgress(5)} className="bg-green-600 hover:bg-green-700 w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(5)}
+              className="bg-green-600 hover:bg-green-700 w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Easy
             </Button>
           </div>

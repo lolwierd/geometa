@@ -41,9 +41,9 @@ export function calculateNextReview(
   let newState = state;
   let newLapses = lapses;
 
-  // Brand new card answered hard: keep it in learning and reshow
-  // it shortly instead of waiting a full day or counting a lapse
-  if (repetitions === 0 && quality < 3 && state !== "lapsed") {
+  // Brand new card answered "hard": keep it in learning and reshow
+  // it shortly instead of waiting a full day
+  if (repetitions === 0 && quality === 2 && state !== "lapsed") {
     return {
       repetitions: 0,
       easeFactor,
@@ -54,7 +54,7 @@ export function calculateNextReview(
     } as const;
   }
 
-  if (quality < 3) {
+  if (quality === 0) {
     // Lapsed card: dramatically reduce the interval but don't reset to a single day
     newLapses += 1;
     return {
@@ -76,13 +76,17 @@ export function calculateNextReview(
     newState = "learning";
   } else if (repetitions === 1) {
     newRepetitions = 2;
-    newInterval = 6;
+    newInterval = quality === 2 ? 3 : 6;
     newState = "review";
   } else {
     newRepetitions = repetitions + 1;
-    newInterval = Math.round(interval * easeFactor);
-    if (quality === 5) {
-      newInterval = Math.round(newInterval * 1.3);
+    if (quality === 2) {
+      newInterval = Math.max(1, Math.round(interval / 2));
+    } else {
+      newInterval = Math.round(interval * easeFactor);
+      if (quality === 5) {
+        newInterval = Math.round(newInterval * 1.3);
+      }
     }
     newState = "review";
   }
@@ -247,11 +251,11 @@ export async function POST(request: Request) {
   try {
     const { locationId, quality } = await request.json();
 
+    const allowedQualities = new Set([0, 2, 3, 5]);
     if (
       typeof locationId !== "number" ||
       !Number.isInteger(quality) ||
-      quality < 0 ||
-      quality > 5
+      !allowedQualities.has(quality)
     ) {
       return NextResponse.json(
         { success: false, message: "Invalid input" },
