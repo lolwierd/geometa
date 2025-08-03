@@ -13,6 +13,12 @@ describe('calculateNextReview', () => {
     const result = calculateNextReview(1, 3, 2.5, 15, 'review', 0);
     expect(result.interval).toBe(7);
     expect(result.repetitions).toBe(0);
+    expect(result.easeFactor).toBeCloseTo(2.3, 5);
+  });
+
+  it('clamps ease factor to a minimum of 1.3 after a lapse', () => {
+    const result = calculateNextReview(1, 3, 1.4, 15, 'review', 0);
+    expect(result.easeFactor).toBeCloseTo(1.3, 5);
   });
 
   it('increases interval and ease factor for Good and Easy grades', () => {
