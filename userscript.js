@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GeoMeta Collector
 // @namespace    geometa-collector
-// @version      2.0.0
+// @version      2.0.1
 // @description  Automatically collect GeoGuessr meta information for personal study
 // @author       GeoMeta Gallery
 // @match        *://*.geoguessr.com/*
@@ -57,7 +57,7 @@
 
   // Initialize the collector
   function init() {
-    log("🚀 GeoMeta Collector v2.0.0 initializing...");
+    log("🚀 GeoMeta Collector v2.0.1 initializing...");
 
     if (typeof GeoGuessrEventFramework !== "undefined") {
       setupFramework();
@@ -176,7 +176,7 @@
         url: url,
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "GeoMetaCollector/2.0.0",
+          "User-Agent": "GeoMetaCollector/2.0.1",
         },
         data: JSON.stringify(data),
         timeout: 15000, // 15 second timeout
@@ -384,13 +384,14 @@
     GM_registerMenuCommand("📊 Show Status", () => {
       const status = `
 GeoMeta Collector Status:
-• Version: 2.0.0
+• Version: 2.0.1
 • API URL: ${CONFIG.apiUrl}
 • Collection: ${CONFIG.enabled ? "Enabled" : "Disabled"}
 • Notifications: ${CONFIG.showNotifications ? "Enabled" : "Disabled"}
 • Debug Mode: ${CONFIG.debugMode ? "Enabled" : "Disabled"}
 • Framework: ${framework ? "Connected" : "Not Connected"}
 • Processing: ${isProcessing ? "Yes" : "No"}
+• GM Functions: ${typeof GM_xmlhttpRequest !== "undefined" ? "Available" : "Missing"}
             `.trim();
 
       alert(status);
@@ -398,6 +399,7 @@ GeoMeta Collector Status:
         CONFIG,
         framework: !!framework,
         isProcessing,
+        hasGM: typeof GM_xmlhttpRequest !== "undefined",
       });
     });
   }
