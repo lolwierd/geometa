@@ -3,7 +3,7 @@ import { calculateNextReview } from '../app/api/memorizer/route';
 
 describe('calculateNextReview', () => {
   it('keeps new Hard answers in learning with a short delay', () => {
-    const result = calculateNextReview(1, 0, 2.5, 0, 'new', 0);
+    const result = calculateNextReview(2, 0, 2.5, 0, 'new', 0);
     expect(result.reviewDelayMinutes).toBe(5);
     expect(result.state).toBe('learning');
     expect(result.lapses).toBe(0);
@@ -21,6 +21,7 @@ describe('calculateNextReview', () => {
     const result = calculateNextReview(1, 3, 2.5, 15, 'review', 0);
     expect(result.interval).toBe(7);
     expect(result.repetitions).toBe(0);
+    expect(result.easeFactor).toBeCloseTo(2.3, 5);
   });
 
   it('recovers lapsed cards with a short delay when answered again', () => {
