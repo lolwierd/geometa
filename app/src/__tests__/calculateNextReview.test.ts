@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateNextReview } from '../app/api/memorizer/route';
+import { calculateNextReview } from '@/lib/memorizer';
 
 describe('calculateNextReview', () => {
   it('keeps new Hard answers in learning with a short delay', () => {
