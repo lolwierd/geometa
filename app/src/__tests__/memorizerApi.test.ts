@@ -6,7 +6,12 @@ describe('memorizer API', () => {
   beforeEach(() => {
     db.exec(`
       DROP TABLE IF EXISTS locations;
-      CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT);
+      CREATE TABLE locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        country TEXT,
+        images TEXT,
+        raw_data TEXT
+      );
       DROP TABLE IF EXISTS memorizer_progress;
       CREATE TABLE memorizer_progress (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,7 +26,9 @@ describe('memorizer API', () => {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    db.prepare('INSERT INTO locations (id) VALUES (1)').run();
+    db.prepare(
+      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
+    ).run(1, "Testland", "[]", "{}");
   });
 
   it('returns scheduled cards as due after time advances', async () => {
@@ -41,7 +48,14 @@ describe('memorizer API', () => {
     const res = await GET();
     const data = await res.json();
 
-    expect(data.locationId).toBe(1);
+    expect(data.location).toEqual(
+      expect.objectContaining({
+        id: 1,
+        country: 'Testland',
+        images: [],
+        raw_data: {},
+      }),
+    );
     expect(data.stats).toEqual({
       new: 1,
       review: 0,
