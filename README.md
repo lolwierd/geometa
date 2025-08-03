@@ -65,7 +65,8 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 
 ### 🧠 Spaced Repetition Memorizer
 - Built-in study mode using a simplified SM-2 algorithm
-- "Hard" answers mark the card as lapsed, show it again within minutes, and count toward lapsed stats
+- "Again" answers mark the card as lapsed and count toward lapsed stats
+- "Hard" answers halve the current interval without lapsing
 - "Good" answers progress intervals like 1 → 6 → 15 days
 - "Easy" answers add a 30% bonus after the second review for 1 → 6 → 20 days
 - Header shows due-today and total counts for new, review, and lapsed cards

@@ -129,11 +129,17 @@ export default function Home() {
     [searchTerm, selectedCountries, pagination.limit, pagination.offset],
   );
 
+  // Keep the latest fetchLocations in a ref so effects can use a stable function
+  const fetchRef = useRef(fetchLocations);
+  useEffect(() => {
+    fetchRef.current = fetchLocations;
+  }, [fetchLocations]);
+
   // Initial fetch & refetch when filters change
   useEffect(() => {
-    fetchLocations(true);
+    fetchRef.current(true);
     // We intentionally omit pagination.offset from deps to avoid infinite loop
-  }, [searchTerm, selectedCountries, pagination.limit, fetchLocations]);
+  }, [searchTerm, selectedCountries, pagination.limit]);
 
   // Auto-refresh when the tab becomes visible or the window gains focus
   useEffect(() => {
