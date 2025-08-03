@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../lib/db';
 import { GET, POST } from '../app/api/memorizer/route';
 
@@ -64,6 +64,44 @@ describe('memorizer API', () => {
       reviewTotal: 0,
       lapsedTotal: 0,
     });
+  });
+
+  it('schedules consistently regardless of server timezone', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2023-01-01T00:00:00Z'));
+
+    process.env.TZ = 'UTC';
+    await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 1, quality: 5 }),
+      }),
+    );
+
+    const { due_date: dueUtc } = db
+      .prepare('SELECT due_date FROM memorizer_progress WHERE location_id = ?')
+      .get(1) as { due_date: string };
+
+    db.prepare(
+      'INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)',
+    ).run(2, 'Otherland', '[]', '{}');
+
+    process.env.TZ = 'Pacific/Honolulu';
+    vi.setSystemTime(new Date('2023-01-01T00:00:00Z'));
+    await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 2, quality: 5 }),
+      }),
+    );
+
+    const { due_date: dueHon } = db
+      .prepare('SELECT due_date FROM memorizer_progress WHERE location_id = ?')
+      .get(2) as { due_date: string };
+
+    expect(dueUtc).toBe(dueHon);
+
+    vi.useRealTimers();
   });
 });
 

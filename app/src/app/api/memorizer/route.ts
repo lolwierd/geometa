@@ -291,9 +291,9 @@ export async function POST(request: Request) {
 
     const dueDate = new Date();
     if (reviewDelayMinutes) {
-      dueDate.setMinutes(dueDate.getMinutes() + reviewDelayMinutes);
+      dueDate.setUTCMinutes(dueDate.getUTCMinutes() + reviewDelayMinutes);
     } else {
-      dueDate.setDate(dueDate.getDate() + interval);
+      dueDate.setUTCDate(dueDate.getUTCDate() + interval);
     }
 
     db.prepare(
@@ -305,7 +305,7 @@ export async function POST(request: Request) {
         "interval" = ?,
         state = ?,
         lapses = ?,
-        due_date = datetime(?)
+        due_date = ?
       WHERE location_id = ?
     `,
     ).run(
