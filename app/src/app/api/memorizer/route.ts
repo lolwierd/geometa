@@ -300,9 +300,9 @@ export async function POST(request: Request) {
 
     const dueDate = new Date();
     if (reviewDelayMinutes) {
-      dueDate.setMinutes(dueDate.getMinutes() + reviewDelayMinutes);
+      dueDate.setUTCMinutes(dueDate.getUTCMinutes() + reviewDelayMinutes);
     } else {
-      dueDate.setDate(dueDate.getDate() + interval);
+      dueDate.setUTCDate(dueDate.getUTCDate() + interval);
     }
     const dueTimestamp = Math.floor(dueDate.getTime() / 1000);
 
