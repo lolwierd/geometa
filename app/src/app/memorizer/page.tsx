@@ -11,6 +11,7 @@ export default function MemorizerPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const [
     stats,
     setStats,
@@ -29,6 +30,7 @@ export default function MemorizerPage() {
   const fetchNextCard = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setUpdateError(null);
 
     try {
       const memorizerRes = await fetch("/api/memorizer");
@@ -53,16 +55,23 @@ export default function MemorizerPage() {
 
   const handleUpdateProgress = async (quality: number) => {
     if (!location) return;
+    setUpdateError(null);
     try {
-      await fetch("/api/memorizer", {
+      const res = await fetch("/api/memorizer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locationId: location.id, quality }),
       });
-    } catch (error) {
-      console.error("Failed to update progress:", error);
-    } finally {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to update progress.");
+      }
       fetchNextCard();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      setUpdateError(message);
+      console.error("Failed to update progress:", error);
     }
   };
 
@@ -115,16 +124,37 @@ export default function MemorizerPage() {
 
           {/* Review Buttons */}
           <div className="mt-8 flex-shrink-0 w-full max-w-lg flex flex-col sm:flex-row justify-around items-center gap-4">
-            <Button onClick={() => handleUpdateProgress(1)} variant="destructive" className="w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(0)}
+              variant="destructive"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
+              Again
+            </Button>
+            <Button
+              onClick={() => handleUpdateProgress(2)}
+              variant="secondary"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Hard
             </Button>
-            <Button onClick={() => handleUpdateProgress(3)} variant="secondary" className="w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(3)}
+              variant="secondary"
+              className="w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Good
             </Button>
-            <Button onClick={() => handleUpdateProgress(5)} className="bg-green-600 hover:bg-green-700 w-full sm:w-32 h-12 text-lg font-semibold">
+            <Button
+              onClick={() => handleUpdateProgress(5)}
+              className="bg-green-600 hover:bg-green-700 w-full sm:w-32 h-12 text-lg font-semibold"
+            >
               Easy
             </Button>
           </div>
+          {updateError && (
+            <p className="mt-4 text-red-400">{updateError}</p>
+          )}
         </motion.div>
       </AnimatePresence>
     );
