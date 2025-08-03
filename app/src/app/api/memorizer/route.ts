@@ -21,15 +21,15 @@ export function calculateNextReview(
   let newState = state;
   let newLapses = lapses;
 
-  // Learning phase for brand new cards: if a new card is marked hard,
-  // show it again shortly instead of waiting a full day
+  // Brand new card answered hard: count it as a lapse and
+  // reshow it shortly instead of waiting a full day
   if (repetitions === 0 && quality < 3 && state !== "lapsed") {
     newLapses += 1;
     return {
       repetitions: 0,
       easeFactor,
       interval: 0,
-      state: "learning",
+      state: "lapsed",
       lapses: newLapses,
       reviewDelayMinutes: 5,
     } as const;

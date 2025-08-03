@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { calculateNextReview } from '../app/api/memorizer/route';
 
 describe('calculateNextReview', () => {
-  it('returns reviewDelayMinutes for new card marked Hard', () => {
+  it('marks new Hard answers as lapsed and returns reviewDelayMinutes', () => {
     const result = calculateNextReview(1, 0, 2.5, 0, 'new', 0);
     expect(result.reviewDelayMinutes).toBe(5);
+    expect(result.state).toBe('lapsed');
+    expect(result.lapses).toBe(1);
   });
 
   it('resets interval and repetitions for lapsed cards', () => {
