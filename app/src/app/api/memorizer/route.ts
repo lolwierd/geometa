@@ -21,15 +21,14 @@ export function calculateNextReview(
   let newState = state;
   let newLapses = lapses;
 
-  // Brand new card answered hard: count it as a lapse and
-  // reshow it shortly instead of waiting a full day
+  // Brand new card answered hard: keep it in learning and reshow
+  // it shortly instead of waiting a full day or counting a lapse
   if (repetitions === 0 && quality < 3 && state !== "lapsed") {
-    newLapses += 1;
     return {
       repetitions: 0,
       easeFactor,
       interval: 0,
-      state: "lapsed",
+      state: "learning",
       lapses: newLapses,
       reviewDelayMinutes: 5,
     } as const;
