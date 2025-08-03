@@ -126,7 +126,7 @@ export async function GET() {
           WHEN mp.id IS NULL OR mp.state IN ('new', 'learning') THEN 2
           ELSE 3
         END,
-        RANDOM()
+        l.id ASC
       LIMIT 1
     `,
       )
@@ -134,7 +134,7 @@ export async function GET() {
 
     // If no cards are due, just pick a random one that has been seen least
     if (!nextCard) {
-      nextCard = db
+      const candidates = db
         .prepare(
           `
         SELECT l.*
@@ -148,11 +148,15 @@ export async function GET() {
             ELSE 3
           END,
           mp.repetitions ASC,
-          RANDOM()
-        LIMIT 1
+          l.id ASC
+        LIMIT 10
       `,
         )
-        .get() as LocationRow | undefined;
+        .all() as LocationRow[];
+
+      if (candidates.length > 0) {
+        nextCard = candidates[Math.floor(Math.random() * candidates.length)];
+      }
     }
 
     if (!nextCard) {
