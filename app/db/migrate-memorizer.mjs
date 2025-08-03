@@ -14,7 +14,7 @@ function migrate() {
       repetitions INTEGER NOT NULL DEFAULT 0,
       ease_factor REAL NOT NULL DEFAULT 2.5, -- A factor controlling interval growth
       "interval" INTEGER NOT NULL DEFAULT 0, -- Days until next review
-      due_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      due_date INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       state TEXT NOT NULL DEFAULT 'new',
       lapses INTEGER NOT NULL DEFAULT 0,
       -- Timestamps

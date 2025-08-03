@@ -116,10 +116,10 @@ export async function GET() {
       SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      WHERE datetime(mp.due_date) <= CURRENT_TIMESTAMP OR mp.id IS NULL
+      WHERE mp.due_date <= strftime('%s','now') OR mp.id IS NULL
       ORDER BY
         CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
-        datetime(mp.due_date) ASC,
+        mp.due_date ASC,
         CASE
           WHEN mp.state = 'lapsed' THEN 0
           WHEN mp.state = 'review' THEN 1
@@ -173,21 +173,21 @@ export async function GET() {
         SELECT
           SUM(
             CASE
-              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND datetime(mp.due_date) <= CURRENT_TIMESTAMP)
+              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS new_due,
           SUM(
             CASE
-              WHEN mp.state = 'review' AND datetime(mp.due_date) <= CURRENT_TIMESTAMP
+              WHEN mp.state = 'review' AND mp.due_date <= strftime('%s','now')
                 THEN 1
               ELSE 0
             END
           ) AS review_due,
           SUM(
             CASE
-              WHEN mp.state = 'lapsed' AND datetime(mp.due_date) <= CURRENT_TIMESTAMP
+              WHEN mp.state = 'lapsed' AND mp.due_date <= strftime('%s','now')
                 THEN 1
               ELSE 0
             END
@@ -303,6 +303,7 @@ export async function POST(request: Request) {
     } else {
       dueDate.setDate(dueDate.getDate() + interval);
     }
+    const dueTimestamp = Math.floor(dueDate.getTime() / 1000);
 
     db.prepare(
       `
@@ -313,7 +314,7 @@ export async function POST(request: Request) {
         "interval" = ?,
         state = ?,
         lapses = ?,
-        due_date = datetime(?)
+        due_date = ?
       WHERE location_id = ?
     `,
     ).run(
@@ -322,7 +323,7 @@ export async function POST(request: Request) {
       interval,
       state,
       lapses,
-      dueDate.toISOString(),
+      dueTimestamp,
       locationId,
     );
 
