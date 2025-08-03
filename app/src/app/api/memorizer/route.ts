@@ -57,9 +57,10 @@ export function calculateNextReview(
   if (quality === 0) {
     // Lapsed card: dramatically reduce the interval but don't reset to a single day
     newLapses += 1;
+    const newEaseFactor = Math.max(1.3, easeFactor - 0.2);
     return {
       repetitions: 0,
-      easeFactor,
+      easeFactor: newEaseFactor,
       interval: 7, // Revisit in about a week
       state: "lapsed",
       lapses: newLapses,
