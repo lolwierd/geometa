@@ -67,6 +67,17 @@ export function calculateNextReview(
     } as const;
   }
 
+  if (state === "lapsed" && repetitions === 0 && quality >= 3) {
+    return {
+      repetitions: 0,
+      easeFactor,
+      interval: 0,
+      state: "learning",
+      lapses: newLapses,
+      reviewDelayMinutes: 10,
+    } as const;
+  }
+
   let newRepetitions;
   let newEaseFactor;
   let newInterval;
