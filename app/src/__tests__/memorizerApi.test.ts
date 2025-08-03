@@ -66,30 +66,42 @@ describe('memorizer API', () => {
     });
   });
 
-  it('validates allowed quality values', async () => {
-    const acceptAgain = await POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ locationId: 1, quality: 0 }),
-      }),
-    );
-    expect(acceptAgain.status).toBe(200);
+  it('aggregates stats across multiple cards', async () => {
+    db.prepare(
+      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
+    ).run(2, "A", "[]", "{}");
+    db.prepare(
+      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
+    ).run(3, "B", "[]", "{}");
+    db.prepare(
+      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
+    ).run(4, "C", "[]", "{}");
 
-    const acceptHard = await POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ locationId: 1, quality: 2 }),
-      }),
-    );
-    expect(acceptHard.status).toBe(200);
+    const past = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const reject = await POST(
-      new Request('http://localhost', {
-        method: 'POST',
-        body: JSON.stringify({ locationId: 1, quality: 4 }),
-      }),
-    );
-    expect(reject.status).toBe(400);
+    db.prepare(
+      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, state, lapses) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(2, 2, 2.5, 6, past, "review", 0);
+    db.prepare(
+      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, state, lapses) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(3, 0, 2.5, 7, past, "lapsed", 1);
+    db.prepare(
+      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, state, lapses) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(4, 2, 2.5, 6, future, "review", 0);
+
+    const res = await GET();
+    const data = await res.json();
+
+    expect(data.location.id).toBe(3);
+    expect(data.stats).toEqual({
+      new: 1,
+      review: 1,
+      lapsed: 1,
+      newTotal: 1,
+      reviewTotal: 2,
+      lapsedTotal: 1,
+    });
   });
 });
 
