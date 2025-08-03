@@ -42,7 +42,14 @@ describe('memorizer API', () => {
     const data = await res.json();
 
     expect(data.locationId).toBe(1);
-    expect(data.stats).toEqual({ new: 1, review: 0, lapsed: 0 });
+    expect(data.stats).toEqual({
+      new: 1,
+      review: 0,
+      lapsed: 0,
+      newTotal: 1,
+      reviewTotal: 0,
+      lapsedTotal: 0,
+    });
   });
 });
 

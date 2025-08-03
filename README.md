@@ -67,6 +67,7 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 - Built-in study mode using a simplified SM-2 algorithm
 - "Good" answers progress intervals like 1 → 6 → 15 days
 - "Easy" answers add a 30% bonus after the second review for 1 → 6 → 20 days
+- Header shows due-today and total counts for new, review, and lapsed cards
 
 ## 🚀 Quick Start
 

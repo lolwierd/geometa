@@ -11,7 +11,20 @@ export default function MemorizerPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<{ new: number; review: number; lapsed: number } | null>(null);
+  const [
+    stats,
+    setStats,
+  ] = useState<
+    | {
+        new: number;
+        review: number;
+        lapsed: number;
+        newTotal: number;
+        reviewTotal: number;
+        lapsedTotal: number;
+      }
+    | null
+  >(null);
 
   const fetchNextCard = useCallback(async () => {
     setLoading(true);
@@ -145,9 +158,9 @@ export default function MemorizerPage() {
             <div className="w-10 sm:w-36 text-right">
               {stats && !loading && (
                 <span className="text-xs sm:text-sm text-slate-500">
-              {stats.new} new, {stats.review} reviews, {stats.lapsed} lapsed
-            </span>
-          )}
+                  {stats.new}/{stats.newTotal} new, {stats.review}/{stats.reviewTotal} reviews, {stats.lapsed}/{stats.lapsedTotal} lapsed due today
+                </span>
+              )}
             </div>
           </div>
         </div>

@@ -164,12 +164,37 @@ export async function GET() {
                 THEN 1
               ELSE 0
             END
-          ) AS lapsed_due
+          ) AS lapsed_due,
+          SUM(
+            CASE
+              WHEN mp.id IS NULL OR mp.state IN ('new', 'learning') THEN 1
+              ELSE 0
+            END
+          ) AS new_total,
+          SUM(
+            CASE
+              WHEN mp.state = 'review' THEN 1
+              ELSE 0
+            END
+          ) AS review_total,
+          SUM(
+            CASE
+              WHEN mp.state = 'lapsed' THEN 1
+              ELSE 0
+            END
+          ) AS lapsed_total
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       `,
       )
-      .get() as { new_due: number; review_due: number; lapsed_due: number };
+      .get() as {
+        new_due: number;
+        review_due: number;
+        lapsed_due: number;
+        new_total: number;
+        review_total: number;
+        lapsed_total: number;
+      };
 
     return NextResponse.json({
       success: true,
@@ -178,6 +203,9 @@ export async function GET() {
         new: counts.new_due ?? 0,
         review: counts.review_due ?? 0,
         lapsed: counts.lapsed_due ?? 0,
+        newTotal: counts.new_total ?? 0,
+        reviewTotal: counts.review_total ?? 0,
+        lapsedTotal: counts.lapsed_total ?? 0,
       },
     });
   } catch (error) {
