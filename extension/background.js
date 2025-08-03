@@ -22,31 +22,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Indicates an asynchronous response
   }
 
-  if (message.action === "captureMeta") {
-    const { image, metadata } = message;
-
-    fetch("http://localhost:3000/api/upload", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ image, metadata }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Upload successful:", data);
-        sendResponse({ status: "success", data });
-      })
-      .catch((error) => {
-        console.error("Upload failed:", error);
-        sendResponse({ status: "error", message: error.message });
-      });
-
-    return true; // Indicates an asynchronous response
-  }
 });

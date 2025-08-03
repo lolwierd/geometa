@@ -22,7 +22,6 @@ This enhanced userscript automatically captures GeoGuessr LearnableMeta screensh
 
 ### 💾 **Smart Storage**
 - **Local storage** using Tampermonkey/Violentmonkey
-- **Optional API sync** with your existing Next.js app
 - **Export functionality** for backup
 - **Import/restore capabilities**
 
@@ -50,7 +49,6 @@ This enhanced userscript automatically captures GeoGuessr LearnableMeta screensh
    - Paste the code and save
 
 3. **Configure (optional):**
-   - Update `API_BASE_URL` if you want to sync with your local server
    - Customize settings through the userscript manager menu
 
 ## 🎮 Usage
@@ -59,7 +57,7 @@ This enhanced userscript automatically captures GeoGuessr LearnableMeta screensh
 1. Play GeoGuessr on any supported map
 2. When LearnableMeta popup appears, the script automatically captures it
 3. You'll see a success toast notification
-4. Screenshots are saved locally and optionally synced to your API
+4. Screenshots are saved locally
 
 ### Gallery Access
 - **Click the floating camera button** (📸) in the bottom-right corner
@@ -92,22 +90,6 @@ View modes: Grid or List layout
 - Total images collected
 - Current filter results
 
-## ⚙️ Configuration
-
-### API Integration (Optional)
-If you want to keep using your existing Next.js app:
-
-1. **Update the API URL:**
-```javascript
-const API_BASE_URL = "http://localhost:3000/api"; // Your local server
-```
-
-2. **CORS Configuration:**
-Make sure your Next.js app allows requests from GeoGuessr:
-```javascript
-// In your API routes
-res.setHeader('Access-Control-Allow-Origin', 'https://www.geoguessr.com');
-```
 
 ### Storage Settings
 ```javascript
@@ -134,7 +116,6 @@ Access these through your userscript manager menu:
 | Cross-browser | Limited | Universal |
 | Customization | Limited | Full code access |
 | Offline capable | Yes | Yes |
-| API sync | Required | Optional |
 
 ## 🎨 Customization
 
@@ -158,7 +139,6 @@ Key functions you can customize:
 - `captureMeta()` - Screenshot capture logic
 - `createCarousel()` - Carousel functionality  
 - `renderGallery()` - Gallery display
-- `uploadToAPI()` - API synchronization
 
 ## 🐛 Troubleshooting
 
@@ -174,12 +154,7 @@ Key functions you can customize:
 - Check for JavaScript errors in console
 - Try refreshing the page
 
-**3. API sync failing:**
-- Verify your local server is running
-- Check the API_BASE_URL configuration
-- Ensure CORS is properly configured
-
-**4. Images not loading:**
+**3. Images not loading:**
 - Check browser console for 404 errors
 - Verify image URLs are accessible
 - Try clearing browser cache

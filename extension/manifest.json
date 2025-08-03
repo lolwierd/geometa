@@ -8,12 +8,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://www.geoguessr.com/*"],
-      "js": ["html2canvas.min.js", "content.js"]
-    }
-  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

@@ -479,9 +479,8 @@
     `);
 
   // Constants
-  const META_POPUP_SELECTOR = ".geometa-container";
-  const API_BASE_URL = "http://localhost:3000/api";
-  const STORAGE_KEY = "geometa_screenshots";
+    const META_POPUP_SELECTOR = ".geometa-container";
+    const STORAGE_KEY = "geometa_screenshots";
 
   // State management
   let popupObserver = null;
@@ -586,80 +585,46 @@
     return Promise.all(imagePromises);
   }
 
-  function uploadToAPI(imageData, metadata) {
-    return new Promise((resolve, reject) => {
-      GM_xmlhttpRequest({
-        method: "POST",
-        url: `${API_BASE_URL}/upload`,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({
-          image: imageData,
-          metadata: metadata,
-        }),
-        onload: (response) => {
-          if (response.status === 200) {
-            const data = JSON.parse(response.responseText);
-            resolve(data);
-          } else {
-            reject(
-              new Error(`HTTP ${response.status}: ${response.statusText}`),
-            );
-          }
-        },
-        onerror: reject,
-      });
-    });
-  }
 
-  function saveToStorage(screenshot) {
-    screenshots.unshift(screenshot);
-    GM_setValue(STORAGE_KEY, JSON.stringify(screenshots));
-    updateFilteredScreenshots();
-  }
-
-  function loadFromStorage() {
-    try {
-      const stored = GM_getValue(STORAGE_KEY, "[]");
-      screenshots = JSON.parse(stored);
+    function saveToStorage(screenshot) {
+      screenshots.unshift(screenshot);
+      GM_setValue(STORAGE_KEY, JSON.stringify(screenshots));
       updateFilteredScreenshots();
-    } catch (error) {
-      console.error("Failed to load from storage:", error);
-      screenshots = [];
-    }
-  }
-
-  function deleteScreenshot(id) {
-    screenshots = screenshots.filter((s) => s.id !== id);
-    GM_setValue(STORAGE_KEY, JSON.stringify(screenshots));
-    updateFilteredScreenshots();
-
-    // Also try to delete from API
-    GM_xmlhttpRequest({
-      method: "DELETE",
-      url: `${API_BASE_URL}/delete?id=${id}`,
-      onload: () => console.log("Deleted from API"),
-      onerror: (error) => console.warn("Failed to delete from API:", error),
-    });
-  }
-
-  function updateFilteredScreenshots() {
-    if (!searchQuery) {
-      filteredScreenshots = [...screenshots];
-    } else {
-      const query = searchQuery.toLowerCase();
-      filteredScreenshots = screenshots.filter(
-        (s) =>
-          s.metadata.country.toLowerCase().includes(query) ||
-          (s.metadata.note && s.metadata.note.toLowerCase().includes(query)),
-      );
     }
 
-    if (document.querySelector(".geometa-enhanced-gallery.active")) {
-      renderGallery();
+    function loadFromStorage() {
+      try {
+        const stored = GM_getValue(STORAGE_KEY, "[]");
+        screenshots = JSON.parse(stored);
+        updateFilteredScreenshots();
+      } catch (error) {
+        console.error("Failed to load from storage:", error);
+        screenshots = [];
+      }
     }
-  }
+
+    function deleteScreenshot(id) {
+      screenshots = screenshots.filter((s) => s.id !== id);
+      GM_setValue(STORAGE_KEY, JSON.stringify(screenshots));
+      updateFilteredScreenshots();
+    }
+
+    function updateFilteredScreenshots() {
+      if (!searchQuery) {
+        filteredScreenshots = [...screenshots];
+      } else {
+        const query = searchQuery.toLowerCase();
+        filteredScreenshots = screenshots.filter(
+          (s) =>
+            s.metadata.country.toLowerCase().includes(query) ||
+            (s.metadata.note && s.metadata.note.toLowerCase().includes(query)),
+        );
+      }
+
+      if (document.querySelector(".geometa-enhanced-gallery.active")) {
+        renderGallery();
+      }
+    }
 
   function captureMeta(popupElement) {
     const captureID = ++currentCaptureID;
@@ -743,18 +708,6 @@
         saveToStorage(screenshot);
         showToast(`Captured meta for ${metadata.country}!`);
 
-        // Try to upload to API
-        try {
-          await uploadToAPI(imageData, metadata);
-          console.log(
-            `GeoMeta Enhanced #${captureID}: Successfully uploaded to API`,
-          );
-        } catch (error) {
-          console.warn(
-            `GeoMeta Enhanced #${captureID}: API upload failed, saved locally only:`,
-            error,
-          );
-        }
       })
       .catch((error) => {
         if (!error.message.includes("aborted")) {
