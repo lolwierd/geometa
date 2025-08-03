@@ -101,6 +101,8 @@ Your gallery will be available at **http://localhost:3000**
 4. **Save the script** (Ctrl+S)
 5. **Configure API URL** via Tampermonkey menu (default: http://localhost:3000)
 
+See [USERSCRIPT.md](USERSCRIPT.md) for detailed instructions and advanced options for all GeoMeta userscripts.
+
 ### 4. Start Collecting
 - **Play GeoGuessr** as normal
 - **Watch for notifications** showing successful collection

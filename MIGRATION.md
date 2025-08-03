@@ -82,7 +82,6 @@ You should see output like:
 1. Open your browser extensions page (`chrome://extensions`)
 2. Find "GeoMeta Collector" or similar
 3. Click **Remove** (not just disable)
-4. Delete the old `extension/` folder if it exists
 
 ### Step 6: Install New Userscript
 
@@ -217,7 +216,7 @@ cp db/geometa-v1-backup.db db/geometa.db
 cp -r public/uploads-v1-backup public/uploads
 
 # Re-enable old browser extension
-# Install from extension/ folder or backup
+# Install from your backup copy
 ```
 
 ## 📞 Need Help?

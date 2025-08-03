@@ -41,7 +41,11 @@ Welcome to GeoMeta! This repository houses a Next.js application in `app/` along
 - Keep PR descriptions concise and focused on the change.
 
 ## Documentation
+<<<<<<< HEAD
 - Update `README.md`, `USERSCRIPT.md`, or other docs when behavior or usage changes.
+=======
+ - Update `README.md`, `USERSCRIPT.md`, or other docs when behavior or usage changes.
+>>>>>>> main
 - Keep `AGENTS.md` accurate; future contributors rely on it. Extend this file when new conventions arise.
 
 ## Miscellaneous
