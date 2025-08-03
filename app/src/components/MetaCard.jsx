@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import DOMPurify from "dompurify";
 import {
   Dialog,
   DialogContent,
@@ -103,6 +104,10 @@ export default function MetaCard({ location, onDelete }) {
   };
 
   const footerLink = extractLink(location.footer);
+  // Sanitize user-provided HTML to avoid XSS issues
+  const sanitizedNote = location.note
+    ? DOMPurify.sanitize(location.note)
+    : "";
 
   // --- EFFECT FOR AUTO-SCROLL ---
   useEffect(() => {
@@ -286,7 +291,7 @@ export default function MetaCard({ location, onDelete }) {
           <div className="flex-1 overflow-y-scroll p-6 space-y-6 [scrollbar-gutter:stable]">
             {location.note && (
               <div className="prose prose-invert prose-slate max-w-none text-slate-200">
-                <div dangerouslySetInnerHTML={{ __html: location.note }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizedNote }} />
               </div>
             )}
 

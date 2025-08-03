@@ -2,9 +2,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import MemorizerPage from "./page";
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import * as matchers from "@testing-library/jest-dom/matchers";
-
-expect.extend(matchers);
+import "@testing-library/jest-dom/vitest";
 
 vi.mock("next/image", () => ({
   __esModule: true,

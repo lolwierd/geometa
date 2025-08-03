@@ -159,12 +159,7 @@ export default function Home() {
   }, [fetchLocations]);
 
   // Infinite scroll observer to automatically fetch more locations
-  // Keep the latest fetchLocations in a ref so the observer callback is always fresh
-  const fetchRef = useRef(fetchLocations);
-  useEffect(() => {
-    fetchRef.current = fetchLocations;
-  }, [fetchLocations]);
-
+  // Reuse the existing fetchRef so the observer callback is always fresh
   const loadingRef = useRef(loading);
   useEffect(() => {
     loadingRef.current = loading;
