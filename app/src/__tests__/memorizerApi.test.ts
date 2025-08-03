@@ -65,5 +65,28 @@ describe('memorizer API', () => {
       lapsedTotal: 0,
     });
   });
+
+  it('re-queues lapsed cards for a quick follow-up review', async () => {
+    db.prepare(
+      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, state, lapses) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'lapsed', 1)",
+    ).run(1, 0, 2.5, 7);
+
+    const before = Date.now();
+
+    await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ locationId: 1, quality: 4 }),
+      }),
+    );
+
+    const { due_date } = db
+      .prepare('SELECT due_date FROM memorizer_progress WHERE location_id = ?')
+      .get(1) as { due_date: string };
+    const diffMs = Date.parse(due_date) - before;
+
+    expect(diffMs).toBeGreaterThanOrEqual(9 * 60 * 1000);
+    expect(diffMs).toBeLessThanOrEqual(11 * 60 * 1000);
+  });
 });
 

@@ -15,6 +15,12 @@ describe('calculateNextReview', () => {
     expect(result.repetitions).toBe(0);
   });
 
+  it('re-queues lapsed cards shortly after a correct answer', () => {
+    const result = calculateNextReview(3, 0, 2.5, 7, 'lapsed', 1);
+    expect(result.reviewDelayMinutes).toBe(10);
+    expect(result.state).toBe('learning');
+  });
+
   it('increases interval and ease factor for Good and Easy grades', () => {
     const good = calculateNextReview(3, 2, 2.5, 6, 'review', 0);
     expect(good.interval).toBe(15);
