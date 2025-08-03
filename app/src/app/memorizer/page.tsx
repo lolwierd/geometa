@@ -11,6 +11,7 @@ export default function MemorizerPage() {
   const [location, setLocation] = useState<Location | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const [
     stats,
     setStats,
@@ -29,6 +30,7 @@ export default function MemorizerPage() {
   const fetchNextCard = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setUpdateError(null);
 
     try {
       const memorizerRes = await fetch("/api/memorizer");
@@ -53,16 +55,23 @@ export default function MemorizerPage() {
 
   const handleUpdateProgress = async (quality: number) => {
     if (!location) return;
+    setUpdateError(null);
     try {
-      await fetch("/api/memorizer", {
+      const res = await fetch("/api/memorizer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locationId: location.id, quality }),
       });
-    } catch (error) {
-      console.error("Failed to update progress:", error);
-    } finally {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to update progress.");
+      }
       fetchNextCard();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      setUpdateError(message);
+      console.error("Failed to update progress:", error);
     }
   };
 
@@ -143,6 +152,9 @@ export default function MemorizerPage() {
               Easy
             </Button>
           </div>
+          {updateError && (
+            <p className="mt-4 text-red-400">{updateError}</p>
+          )}
         </motion.div>
       </AnimatePresence>
     );
