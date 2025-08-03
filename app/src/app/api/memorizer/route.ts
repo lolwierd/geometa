@@ -1,6 +1,26 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+interface LocationRow {
+  id: number;
+  images: string;
+  raw_data: string;
+  [key: string]: any;
+}
+
+function safeJsonParse<T>(jsonString: string | null, fallback: T): T {
+  try {
+    if (!jsonString || jsonString.trim() === "") {
+      return fallback;
+    }
+    const parsed = JSON.parse(jsonString);
+    return parsed ?? fallback;
+  } catch (error) {
+    console.warn("Failed to parse JSON:", jsonString, error);
+    return fallback;
+  }
+}
+
 interface Progress {
   repetitions: number;
   ease_factor: number;
@@ -90,7 +110,7 @@ export async function GET() {
     let nextCard = db
       .prepare(
         `
-      SELECT l.id
+      SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       WHERE datetime(mp.due_date) <= CURRENT_TIMESTAMP OR mp.id IS NULL
@@ -107,14 +127,14 @@ export async function GET() {
       LIMIT 1
     `,
       )
-      .get();
+      .get() as LocationRow | undefined;
 
     // If no cards are due, just pick a random one that has been seen least
     if (!nextCard) {
       nextCard = db
         .prepare(
           `
-        SELECT l.id
+        SELECT l.*
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
         ORDER BY
@@ -129,7 +149,7 @@ export async function GET() {
         LIMIT 1
       `,
         )
-        .get();
+        .get() as LocationRow | undefined;
     }
 
     if (!nextCard) {
@@ -196,9 +216,15 @@ export async function GET() {
         lapsed_total: number;
       };
 
+    const location = {
+      ...nextCard,
+      images: safeJsonParse(nextCard.images, []),
+      raw_data: safeJsonParse(nextCard.raw_data, {}),
+    };
+
     return NextResponse.json({
       success: true,
-      locationId: (nextCard as any).id,
+      location,
       stats: {
         new: counts.new_due ?? 0,
         review: counts.review_due ?? 0,

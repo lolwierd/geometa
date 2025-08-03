@@ -37,17 +37,9 @@ export default function MemorizerPage() {
       if (!memorizerRes.ok || !memorizerData.success) {
         throw new Error(memorizerData.message || "Could not get next card.");
       }
-      const { locationId, stats: newStats } = memorizerData;
+      const { location: newLocation, stats: newStats } = memorizerData;
       setStats(newStats);
-
-      const metaRes = await fetch(`/api/meta/${locationId}`);
-      const metaData = await metaRes.json();
-
-      if (!metaRes.ok || !metaData.success) {
-        throw new Error(metaData.message || "Could not load location data.");
-      }
-
-      setLocation(metaData.location);
+      setLocation(newLocation);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
