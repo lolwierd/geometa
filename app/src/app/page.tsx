@@ -3,18 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, RefreshCw, MapPin, Database, Globe, BrainCircuit } from "lucide-react";
 import {
   MultiSelectComboBox,
-  Option,
 } from "@/components/ui/multi-select-combobox";
 import MetaCard from "@/components/MetaCard";
 import Link from "next/link";
@@ -39,6 +31,7 @@ interface GalleryResponse {
   locations: Location[];
   total: number;
   countries: string[];
+  continents: string[];
   stats: {
     total_locations: number;
     total_countries: number;
@@ -52,6 +45,7 @@ interface GalleryResponse {
   };
   filters: {
     country: string[] | null;
+    continent: string[] | null;
     search: string | null;
   };
 }
@@ -60,6 +54,7 @@ export default function Home() {
   // State management
   const [locations, setLocations] = useState<Location[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+  const [continents, setContinents] = useState<string[]>([]);
   const [stats, setStats] = useState({
     total_locations: 0,
     total_countries: 0,
@@ -68,6 +63,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     limit: 72,
     offset: 0,
@@ -91,6 +87,9 @@ export default function Home() {
         if (selectedCountries.length > 0) {
           params.set("country", selectedCountries.join(","));
         }
+        if (selectedContinents.length > 0) {
+          params.set("continent", selectedContinents.join(","));
+        }
         params.append("limit", pagination.limit.toString());
         params.append("offset", reset ? "0" : pagination.offset.toString());
 
@@ -110,6 +109,7 @@ export default function Home() {
           reset ? data.locations : [...prev, ...data.locations],
         );
         setCountries(data.countries);
+        setContinents(data.continents);
         setStats(data.stats);
         setPagination({
           ...data.pagination,
@@ -126,7 +126,7 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [searchTerm, selectedCountries, pagination.limit, pagination.offset],
+    [searchTerm, selectedCountries, selectedContinents, pagination.limit, pagination.offset],
   );
 
   // Keep the latest fetchLocations in a ref so effects can use a stable function
@@ -139,7 +139,7 @@ export default function Home() {
   useEffect(() => {
     fetchRef.current(true);
     // We intentionally omit pagination.offset from deps to avoid infinite loop
-  }, [searchTerm, selectedCountries, pagination.limit]);
+  }, [searchTerm, selectedCountries, selectedContinents, pagination.limit]);
 
   // Auto-refresh when the tab becomes visible or the window gains focus
   useEffect(() => {
@@ -203,6 +203,12 @@ export default function Home() {
     setPagination((prev) => ({ ...prev, offset: 0 }));
   };
 
+  const handleContinentChange = (values: string[]) => {
+    scrollToTop();
+    setSelectedContinents(values);
+    setPagination((prev) => ({ ...prev, offset: 0 }));
+  };
+
   // Handle location deletion
   const handleDeleteLocation = (locationId: number) => {
     setLocations((prev) => prev.filter((loc) => loc.id !== locationId));
@@ -217,6 +223,7 @@ export default function Home() {
     scrollToTop();
     setSearchTerm("");
     setSelectedCountries([]);
+    setSelectedContinents([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
     fetchLocations(true);
   };
@@ -286,6 +293,14 @@ export default function Home() {
               </form>
 
               <MultiSelectComboBox
+                options={continents.map((c) => ({ value: c, label: c }))}
+                selected={selectedContinents}
+                onChange={handleContinentChange}
+                placeholder="Filter by continent..."
+                className="w-full md:w-[220px]"
+              />
+
+              <MultiSelectComboBox
                 options={countries.map((c) => ({ value: c, label: c }))}
                 selected={selectedCountries}
                 onChange={handleCountryChange}
@@ -345,7 +360,7 @@ export default function Home() {
                 <h3 className="text-lg font-semibold mb-2 text-white">
                   No Locations Found
                 </h3>
-                {searchTerm || selectedCountries.length > 0 ? (
+                {searchTerm || selectedCountries.length > 0 || selectedContinents.length > 0 ? (
                   <div>
                     <p className="text-slate-300 mb-4">
                       No locations match your current filters.
@@ -354,6 +369,7 @@ export default function Home() {
                       onClick={() => {
                         setSearchTerm("");
                         setSelectedCountries([]);
+                        setSelectedContinents([]);
                       }}
                       variant="outline"
                       className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
