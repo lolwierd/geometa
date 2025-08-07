@@ -34,6 +34,7 @@ interface GalleryResponse {
   total: number;
   countries: string[];
   continents: string[];
+  states: string[];
   stats: {
     total_locations: number;
     total_countries: number;
@@ -48,6 +49,7 @@ interface GalleryResponse {
   filters: {
     country: string[] | null;
     continent: string[] | null;
+    state: string[] | null;
     search: string | null;
   };
 }
@@ -57,6 +59,7 @@ export default function Home() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [continents, setContinents] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [stats, setStats] = useState({
     total_locations: 0,
     total_countries: 0,
@@ -66,6 +69,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     limit: 72,
     offset: 0,
@@ -103,12 +107,14 @@ export default function Home() {
     const q = searchParams.get("q") || "";
     const countryParam = searchParams.get("country");
     const continentParam = searchParams.get("continent");
+    const stateParam = searchParams.get("state");
     const limitParam = parseInt(searchParams.get("limit") || "72", 10);
     const offsetParam = parseInt(searchParams.get("offset") || "0", 10);
 
     setSearchTerm(q);
     setSelectedCountries(countryParam ? countryParam.split(",") : []);
     setSelectedContinents(continentParam ? continentParam.split(",") : []);
+    setSelectedStates(stateParam ? stateParam.split(",") : []);
     setPagination((prev) => ({
       ...prev,
       limit: limitParam,
@@ -152,6 +158,7 @@ export default function Home() {
         );
         setCountries(data.countries);
         setContinents(data.continents);
+        setStates(data.states);
         setStats(data.stats);
         setPagination({
           ...data.pagination,
@@ -255,6 +262,11 @@ export default function Home() {
     } else {
       params.delete("continent");
     }
+    if (selectedStates.length > 0) {
+      params.set("state", selectedStates.join(","));
+    } else {
+      params.delete("state");
+    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -280,6 +292,11 @@ export default function Home() {
     } else {
       params.delete("continent");
     }
+    if (selectedStates.length > 0) {
+      params.set("state", selectedStates.join(","));
+    } else {
+      params.delete("state");
+    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -304,6 +321,40 @@ export default function Home() {
     } else {
       params.delete("continent");
     }
+    if (selectedStates.length > 0) {
+      params.set("state", selectedStates.join(","));
+    } else {
+      params.delete("state");
+    }
+    params.delete("offset");
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const handleStateChange = (values: string[]) => {
+    scrollToTop();
+    setSelectedStates(values);
+    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm.trim()) {
+      params.set("q", searchTerm.trim());
+    } else {
+      params.delete("q");
+    }
+    if (selectedCountries.length > 0) {
+      params.set("country", selectedCountries.join(","));
+    } else {
+      params.delete("country");
+    }
+    if (selectedContinents.length > 0) {
+      params.set("continent", selectedContinents.join(","));
+    } else {
+      params.delete("continent");
+    }
+    if (values.length > 0) {
+      params.set("state", values.join(","));
+    } else {
+      params.delete("state");
+    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -323,6 +374,7 @@ export default function Home() {
     setSearchTerm("");
     setSelectedCountries([]);
     setSelectedContinents([]);
+    setSelectedStates([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
     router.replace(pathname);
   };
@@ -405,6 +457,14 @@ export default function Home() {
                 onChange={handleCountryChange}
                 placeholder="Filter by country..."
                 className="w-full md:w-[280px]"
+              />
+
+              <MultiSelectComboBox
+                options={states.map((s) => ({ value: s, label: s }))}
+                selected={selectedStates}
+                onChange={handleStateChange}
+                placeholder="Filter by state..."
+                className="w-full md:w-[220px]"
               />
 
               <Button
@@ -491,6 +551,7 @@ export default function Home() {
                         setSearchTerm("");
                         setSelectedCountries([]);
                         setSelectedContinents([]);
+                        setSelectedStates([]);
                       }}
                       variant="outline"
                       className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"

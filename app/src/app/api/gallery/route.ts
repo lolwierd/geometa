@@ -30,11 +30,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country");
     const continent = searchParams.get("continent");
+    const state = searchParams.get("state");
     const search = searchParams.get("q");
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100); // Cap at 100
     const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
 
-    logger.info("🔍 Gallery API request:", { country, continent, search, limit, offset });
+    logger.info("🔍 Gallery API request:", { country, continent, state, search, limit, offset });
 
     let query: string;
     let countQuery: string;
@@ -45,11 +46,13 @@ export async function GET(request: NextRequest) {
     if (search && search.trim()) {
       query = `
         SELECT l.* FROM locations l
+        LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
         JOIN locations_fts fts ON l.id = fts.rowid
         WHERE locations_fts MATCH ?
       `;
       countQuery = `
         SELECT COUNT(*) as total FROM locations l
+        LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
         JOIN locations_fts fts ON l.id = fts.rowid
         WHERE locations_fts MATCH ?
       `;
@@ -90,8 +93,8 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Regular query without full-text search
-      query = "SELECT * FROM locations WHERE 1=1";
-      countQuery = "SELECT COUNT(*) as total FROM locations WHERE 1=1";
+      query = "SELECT l.* FROM locations l LEFT JOIN memorizer_progress mp ON l.id = mp.location_id WHERE 1=1";
+      countQuery = "SELECT COUNT(*) as total FROM locations l LEFT JOIN memorizer_progress mp ON l.id = mp.location_id WHERE 1=1";
 
       // Country filter
       if (country && country !== "all") {
@@ -116,6 +119,18 @@ export async function GET(request: NextRequest) {
           params.push(...continentCountries);
           countParams.push(...continentCountries);
         }
+      }
+    }
+
+    // State filter
+    if (state && state !== "all") {
+      const stateList = state.split(',').filter((s) => s.trim() !== '');
+      if (stateList.length > 0) {
+        const placeholders = stateList.map(() => '?').join(',');
+        query += ` AND mp.state IN (${placeholders})`;
+        countQuery += ` AND mp.state IN (${placeholders})`;
+        params.push(...stateList);
+        countParams.push(...stateList);
       }
     }
 
@@ -154,6 +169,13 @@ export async function GET(request: NextRequest) {
       ),
     ).sort();
 
+    // Get unique memorizer states for filter dropdown
+    const statesStmt = db.prepare(
+      "SELECT DISTINCT state FROM memorizer_progress WHERE state IS NOT NULL ORDER BY state",
+    );
+    const statesResult = statesStmt.all() as { state: string }[];
+    const states = statesResult.map((row) => row.state);
+
     // Get some stats
     const statsStmt = db.prepare(
       "SELECT COUNT(*) as total_locations, COUNT(DISTINCT country) as total_countries FROM locations",
@@ -173,6 +195,7 @@ export async function GET(request: NextRequest) {
       total,
       countries,
       continents,
+      states,
       stats,
       pagination: {
         limit,
@@ -184,6 +207,7 @@ export async function GET(request: NextRequest) {
       filters: {
         country: country === "all" ? null : country?.split(','),
         continent: continent === "all" ? null : continent?.split(','),
+        state: state === "all" ? null : state?.split(','),
         search: search || null,
       },
     });
