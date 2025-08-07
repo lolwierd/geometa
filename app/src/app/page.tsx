@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/multi-select-combobox";
 import MetaCard from "@/components/MetaCard";
 import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface Location {
   id: number;
@@ -72,8 +73,31 @@ export default function Home() {
     totalPages: 1,
   });
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   // Ref for infinite scroll sentinel
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync state with URL query parameters
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    const countryParam = searchParams.get("country");
+    const continentParam = searchParams.get("continent");
+    const limitParam = parseInt(searchParams.get("limit") || "72", 10);
+    const offsetParam = parseInt(searchParams.get("offset") || "0", 10);
+
+    setSearchTerm(q);
+    setSelectedCountries(countryParam ? countryParam.split(",") : []);
+    setSelectedContinents(continentParam ? continentParam.split(",") : []);
+    setPagination((prev) => ({
+      ...prev,
+      limit: limitParam,
+      offset: offsetParam,
+      page: Math.floor(offsetParam / limitParam) + 1,
+    }));
+  }, [searchParams]);
 
   // Fetch locations from API
   const fetchLocations = useCallback(
@@ -82,16 +106,16 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
-        const params = new URLSearchParams();
-        if (searchTerm.trim()) params.append("q", searchTerm.trim());
-        if (selectedCountries.length > 0) {
-          params.set("country", selectedCountries.join(","));
-        }
-        if (selectedContinents.length > 0) {
-          params.set("continent", selectedContinents.join(","));
-        }
-        params.append("limit", pagination.limit.toString());
-        params.append("offset", reset ? "0" : pagination.offset.toString());
+        const params = new URLSearchParams(searchParams.toString());
+        const limit = parseInt(
+          params.get("limit") || pagination.limit.toString(),
+          10,
+        );
+        const offset = reset
+          ? parseInt(params.get("offset") || "0", 10)
+          : pagination.offset;
+        params.set("limit", limit.toString());
+        params.set("offset", offset.toString());
 
         const response = await fetch(`/api/gallery?${params}`);
 
@@ -113,9 +137,7 @@ export default function Home() {
         setStats(data.stats);
         setPagination({
           ...data.pagination,
-          offset: reset
-            ? data.pagination.limit
-            : pagination.offset + data.pagination.limit,
+          offset: data.pagination.offset + data.pagination.limit,
         });
       } catch (error) {
         console.error("Failed to fetch locations:", error);
@@ -126,7 +148,7 @@ export default function Home() {
         setLoading(false);
       }
     },
-    [searchTerm, selectedCountries, selectedContinents, pagination.limit, pagination.offset],
+    [searchParams, pagination.limit, pagination.offset],
   );
 
   // Keep the latest fetchLocations in a ref so effects can use a stable function
@@ -139,7 +161,7 @@ export default function Home() {
   useEffect(() => {
     fetchRef.current(true);
     // We intentionally omit pagination.offset from deps to avoid infinite loop
-  }, [searchTerm, selectedCountries, selectedContinents, pagination.limit]);
+  }, [searchParams]);
 
   // Auto-refresh when the tab becomes visible
   useEffect(() => {
@@ -198,21 +220,74 @@ export default function Home() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     scrollToTop();
-    setPagination((prev) => ({ ...prev, offset: 0 }));
-    fetchLocations(true);
+    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm.trim()) {
+      params.set("q", searchTerm.trim());
+    } else {
+      params.delete("q");
+    }
+    if (selectedCountries.length > 0) {
+      params.set("country", selectedCountries.join(","));
+    } else {
+      params.delete("country");
+    }
+    if (selectedContinents.length > 0) {
+      params.set("continent", selectedContinents.join(","));
+    } else {
+      params.delete("continent");
+    }
+    params.delete("offset");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   // Handle country filter change
   const handleCountryChange = (values: string[]) => {
     scrollToTop();
     setSelectedCountries(values);
-    setPagination((prev) => ({ ...prev, offset: 0 }));
+    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm.trim()) {
+      params.set("q", searchTerm.trim());
+    } else {
+      params.delete("q");
+    }
+    if (values.length > 0) {
+      params.set("country", values.join(","));
+    } else {
+      params.delete("country");
+    }
+    if (selectedContinents.length > 0) {
+      params.set("continent", selectedContinents.join(","));
+    } else {
+      params.delete("continent");
+    }
+    params.delete("offset");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleContinentChange = (values: string[]) => {
     scrollToTop();
     setSelectedContinents(values);
-    setPagination((prev) => ({ ...prev, offset: 0 }));
+    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm.trim()) {
+      params.set("q", searchTerm.trim());
+    } else {
+      params.delete("q");
+    }
+    if (selectedCountries.length > 0) {
+      params.set("country", selectedCountries.join(","));
+    } else {
+      params.delete("country");
+    }
+    if (values.length > 0) {
+      params.set("continent", values.join(","));
+    } else {
+      params.delete("continent");
+    }
+    params.delete("offset");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   // Handle location deletion
@@ -231,7 +306,7 @@ export default function Home() {
     setSelectedCountries([]);
     setSelectedContinents([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
-    fetchLocations(true);
+    router.replace(pathname);
   };
 
   return (
