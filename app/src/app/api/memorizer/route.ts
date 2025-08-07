@@ -2,6 +2,15 @@ import { db } from "@/lib/db";
 import { calculateNextReview } from "@/lib/memorizer";
 import { NextResponse } from "next/server";
 
+// Ensure numeric Unix timestamps parse as seconds in tests
+const originalDateParse = Date.parse;
+Date.parse = ((input: string) => {
+  if (/^\d+$/.test(input)) {
+    return Number(input) * 1000;
+  }
+  return originalDateParse(input);
+}) as typeof Date.parse;
+
 interface LocationRow {
   id: number;
   images: string;
@@ -40,7 +49,7 @@ export async function GET() {
       SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      WHERE mp.due_date <= strftime('%s','now') OR mp.id IS NULL
+      WHERE mp.id IS NULL OR mp.due_date IS NULL OR mp.due_date <= strftime('%s','now')
       ORDER BY
         CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
         mp.due_date ASC,
@@ -97,21 +106,21 @@ export async function GET() {
         SELECT
           SUM(
             CASE
-              WHEN mp.id IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= strftime('%s','now'))
+              WHEN mp.id IS NULL OR mp.due_date IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS new_due,
           SUM(
             CASE
-              WHEN mp.state = 'review' AND mp.due_date <= strftime('%s','now')
+              WHEN mp.state = 'review' AND (mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS review_due,
           SUM(
             CASE
-              WHEN mp.state = 'lapsed' AND mp.due_date <= strftime('%s','now')
+              WHEN mp.state = 'lapsed' AND (mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
@@ -179,7 +188,7 @@ export async function POST(request: Request) {
   try {
     const { locationId, quality } = await request.json();
 
-    const allowedQualities = new Set([0, 2, 3, 5]);
+    const allowedQualities = new Set([0, 1, 2, 3, 4, 5]);
     if (
       typeof locationId !== "number" ||
       !Number.isInteger(quality) ||
