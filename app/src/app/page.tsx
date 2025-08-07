@@ -4,8 +4,27 @@ import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, RefreshCw, MapPin, Database, Globe, BrainCircuit } from "lucide-react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Search,
+  RefreshCw,
+  MapPin,
+  Database,
+  Globe,
+  BrainCircuit,
+  ChevronDown,
+} from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import {
   MultiSelectComboBox,
 } from "@/components/ui/multi-select-combobox";
@@ -34,7 +53,6 @@ interface GalleryResponse {
   total: number;
   countries: string[];
   continents: string[];
-  states: string[];
   stats: {
     total_locations: number;
     total_countries: number;
@@ -49,7 +67,6 @@ interface GalleryResponse {
   filters: {
     country: string[] | null;
     continent: string[] | null;
-    state: string[] | null;
     search: string | null;
   };
 }
@@ -59,7 +76,6 @@ function HomeContent() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [continents, setContinents] = useState<string[]>([]);
-  const [states, setStates] = useState<string[]>([]);
   const [stats, setStats] = useState({
     total_locations: 0,
     total_countries: 0,
@@ -69,7 +85,6 @@ function HomeContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     limit: 72,
     offset: 0,
@@ -107,14 +122,12 @@ function HomeContent() {
     const q = searchParams.get("q") || "";
     const countryParam = searchParams.get("country");
     const continentParam = searchParams.get("continent");
-    const stateParam = searchParams.get("state");
     const limitParam = parseInt(searchParams.get("limit") || "72", 10);
     const offsetParam = parseInt(searchParams.get("offset") || "0", 10);
 
     setSearchTerm(q);
     setSelectedCountries(countryParam ? countryParam.split(",") : []);
     setSelectedContinents(continentParam ? continentParam.split(",") : []);
-    setSelectedStates(stateParam ? stateParam.split(",") : []);
     setPagination((prev) => ({
       ...prev,
       limit: limitParam,
@@ -158,7 +171,6 @@ function HomeContent() {
         );
         setCountries(data.countries);
         setContinents(data.continents);
-        setStates(data.states);
         setStats(data.stats);
         setPagination({
           ...data.pagination,
@@ -262,11 +274,6 @@ function HomeContent() {
     } else {
       params.delete("continent");
     }
-    if (selectedStates.length > 0) {
-      params.set("state", selectedStates.join(","));
-    } else {
-      params.delete("state");
-    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -292,11 +299,6 @@ function HomeContent() {
     } else {
       params.delete("continent");
     }
-    if (selectedStates.length > 0) {
-      params.set("state", selectedStates.join(","));
-    } else {
-      params.delete("state");
-    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -321,40 +323,6 @@ function HomeContent() {
     } else {
       params.delete("continent");
     }
-    if (selectedStates.length > 0) {
-      params.set("state", selectedStates.join(","));
-    } else {
-      params.delete("state");
-    }
-    params.delete("offset");
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
-  const handleStateChange = (values: string[]) => {
-    scrollToTop();
-    setSelectedStates(values);
-    setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
-    const params = new URLSearchParams(searchParams.toString());
-    if (searchTerm.trim()) {
-      params.set("q", searchTerm.trim());
-    } else {
-      params.delete("q");
-    }
-    if (selectedCountries.length > 0) {
-      params.set("country", selectedCountries.join(","));
-    } else {
-      params.delete("country");
-    }
-    if (selectedContinents.length > 0) {
-      params.set("continent", selectedContinents.join(","));
-    } else {
-      params.delete("continent");
-    }
-    if (values.length > 0) {
-      params.set("state", values.join(","));
-    } else {
-      params.delete("state");
-    }
     params.delete("offset");
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -374,7 +342,6 @@ function HomeContent() {
     setSearchTerm("");
     setSelectedCountries([]);
     setSelectedContinents([]);
-    setSelectedStates([]);
     setPagination((prev) => ({ ...prev, offset: 0, page: 1 }));
     router.replace(pathname);
   };
@@ -459,44 +426,55 @@ function HomeContent() {
                 className="w-full md:w-[280px]"
               />
 
-              <MultiSelectComboBox
-                options={states.map((s) => ({ value: s, label: s }))}
-                selected={selectedStates}
-                onChange={handleStateChange}
-                placeholder="Filter by state..."
-                className="w-full md:w-[220px]"
-              />
-
-              <Button
-                onClick={handleRefresh}
-                variant="outline"
-                className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button
-                onClick={() => setAutoRefreshEnabled((prev) => !prev)}
-                variant="outline"
-                className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-              >
-                {autoRefreshEnabled ? "Auto On" : "Auto Off"}
-              </Button>
-              <Select
-                value={refreshInterval.toString()}
-                onValueChange={(value) => setRefreshInterval(parseInt(value, 10))}
-                disabled={!autoRefreshEnabled}
-              >
-                <SelectTrigger className="w-[100px] bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Interval" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 text-white border-slate-600">
-                  <SelectItem value="3000">3s</SelectItem>
-                  <SelectItem value="5000">5s</SelectItem>
-                  <SelectItem value="10000">10s</SelectItem>
-                  <SelectItem value="30000">30s</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex">
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="ml-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 px-2"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 bg-slate-700 text-white border-slate-600">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="auto-refresh"
+                        className="h-4 w-4"
+                        checked={autoRefreshEnabled}
+                        onChange={(e) => setAutoRefreshEnabled(e.target.checked)}
+                      />
+                      <label htmlFor="auto-refresh" className="text-sm">
+                        Auto refresh
+                      </label>
+                    </div>
+                    <Select
+                      value={refreshInterval.toString()}
+                      onValueChange={(value) => setRefreshInterval(parseInt(value, 10))}
+                      disabled={!autoRefreshEnabled}
+                    >
+                      <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-white">
+                        <SelectValue placeholder="Interval" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 text-white border-slate-600">
+                        <SelectItem value="3000">3s</SelectItem>
+                        <SelectItem value="5000">5s</SelectItem>
+                        <SelectItem value="10000">10s</SelectItem>
+                        <SelectItem value="30000">30s</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -551,7 +529,6 @@ function HomeContent() {
                         setSearchTerm("");
                         setSelectedCountries([]);
                         setSelectedContinents([]);
-                        setSelectedStates([]);
                       }}
                       variant="outline"
                       className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
