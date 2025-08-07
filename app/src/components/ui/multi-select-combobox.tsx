@@ -49,7 +49,7 @@ function MultiSelectComboBox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between h-auto bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600", className)}
+          className={cn("w-full justify-between h-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600", className)}
           onClick={() => setOpen(!open)}
         >
           <div className="flex gap-1 flex-wrap">
@@ -78,9 +78,9 @@ function MultiSelectComboBox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="min-w-[var(--radix-popover-trigger-width)] w-[var(--radix-popover-trigger-width)] max-h-64 overflow-y-auto rounded-md border border-slate-700 bg-slate-800 text-slate-200 shadow-lg p-0">
-        <Command className="text-slate-200 [&_[cmdk-input-wrapper]]:bg-slate-700 [&_[cmdk-input-wrapper]]:border-b [&_[cmdk-input-wrapper]]:border-slate-600">
-          <CommandInput placeholder="Search..." className="bg-slate-700 placeholder:text-slate-400 data-[cmdk-input-wrapper]:border-b data-[cmdk-input-wrapper]:border-slate-600" />
+      <PopoverContent className="min-w-[var(--radix-popover-trigger-width)] w-[var(--radix-popover-trigger-width)] max-h-64 overflow-y-auto rounded-md border border-slate-600 bg-slate-700 text-white shadow-lg p-0">
+        <Command className="text-white [&_[cmdk-input-wrapper]]:bg-slate-700 [&_[cmdk-input-wrapper]]:border-b [&_[cmdk-input-wrapper]]:border-slate-600">
+          <CommandInput placeholder="Search..." className="bg-slate-700 placeholder:text-slate-200 data-[cmdk-input-wrapper]:border-b data-[cmdk-input-wrapper]:border-slate-600" />
           <CommandList className="max-h-none overflow-y-visible overflow-x-hidden">
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
@@ -91,7 +91,7 @@ function MultiSelectComboBox({
                     handleSelect(option.value);
                     setOpen(true); // Keep popover open after selection
                   }}
-                  className="text-slate-200 hover:bg-slate-700 aria-selected:bg-blue-600 aria-selected:text-white"
+                  className="text-white hover:bg-slate-600 aria-selected:bg-blue-600 aria-selected:text-white"
                 >
                   <Check
                     className={cn(

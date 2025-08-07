@@ -426,11 +426,11 @@ function HomeContent() {
                 className="w-full md:w-[280px]"
               />
 
-              <div className="flex">
+              <div className="relative inline-flex">
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
-                  className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                  className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600 pr-8"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Refresh
@@ -439,7 +439,7 @@ function HomeContent() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="ml-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 px-2"
+                      className="absolute right-0 top-0 h-full w-8 border-l border-slate-600 bg-slate-700 text-white hover:bg-slate-600 rounded-l-none"
                     >
                       <ChevronDown className="h-4 w-4" />
                     </Button>
