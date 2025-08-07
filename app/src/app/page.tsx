@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,7 +54,7 @@ interface GalleryResponse {
   };
 }
 
-export default function Home() {
+function HomeContent() {
   // State management
   const [locations, setLocations] = useState<Location[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -605,5 +605,13 @@ export default function Home() {
         )}
       </div>
     </div>
+    );
+  }
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
