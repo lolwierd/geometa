@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, RefreshCw, MapPin, Database, Globe, BrainCircuit } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   MultiSelectComboBox,
 } from "@/components/ui/multi-select-combobox";
@@ -72,6 +73,8 @@ export default function Home() {
     page: 1,
     totalPages: 1,
   });
+  const [refreshInterval, setRefreshInterval] = useState(3000);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,6 +82,21 @@ export default function Home() {
 
   // Ref for infinite scroll sentinel
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  // Load and persist auto-refresh settings
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedInterval = localStorage.getItem("refreshInterval");
+    const storedEnabled = localStorage.getItem("autoRefreshEnabled");
+    if (storedInterval) setRefreshInterval(parseInt(storedInterval, 10));
+    if (storedEnabled) setAutoRefreshEnabled(storedEnabled === "true");
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("refreshInterval", refreshInterval.toString());
+    localStorage.setItem("autoRefreshEnabled", autoRefreshEnabled.toString());
+  }, [refreshInterval, autoRefreshEnabled]);
 
   // Sync state with URL query parameters
   useEffect(() => {
@@ -177,14 +195,14 @@ export default function Home() {
     };
   }, []);
 
-  // Auto-refresh every 3 seconds
+  // Auto-refresh at configured interval
   useEffect(() => {
+    if (!autoRefreshEnabled) return;
     const interval = setInterval(() => {
       fetchRef.current(true);
-    }, 3000);
-
+    }, refreshInterval);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshInterval, autoRefreshEnabled]);
 
   // Infinite scroll observer to automatically fetch more locations
   // Reuse the existing fetchRef so the observer callback is always fresh
@@ -397,6 +415,28 @@ export default function Home() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
+              <Button
+                onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+                variant="outline"
+                className="sm:w-auto bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+              >
+                {autoRefreshEnabled ? "Auto On" : "Auto Off"}
+              </Button>
+              <Select
+                value={refreshInterval.toString()}
+                onValueChange={(value) => setRefreshInterval(parseInt(value, 10))}
+                disabled={!autoRefreshEnabled}
+              >
+                <SelectTrigger className="w-[100px] bg-slate-700 border-slate-600 text-white">
+                  <SelectValue placeholder="Interval" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 text-white border-slate-600">
+                  <SelectItem value="3000">3s</SelectItem>
+                  <SelectItem value="5000">5s</SelectItem>
+                  <SelectItem value="10000">10s</SelectItem>
+                  <SelectItem value="30000">30s</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
