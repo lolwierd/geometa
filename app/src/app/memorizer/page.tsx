@@ -53,27 +53,55 @@ export default function MemorizerPage() {
     fetchNextCard();
   }, [fetchNextCard]);
 
-  const handleUpdateProgress = async (quality: number) => {
-    if (!location) return;
-    setUpdateError(null);
-    try {
-      const res = await fetch("/api/memorizer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locationId: location.id, quality }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to update progress.");
+  const handleUpdateProgress = useCallback(
+    async (quality: number) => {
+      if (!location) return;
+      setUpdateError(null);
+      try {
+        const res = await fetch("/api/memorizer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locationId: location.id, quality }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Failed to update progress.");
+        }
+        fetchNextCard();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "An unknown error occurred";
+        setUpdateError(message);
+        console.error("Failed to update progress:", error);
       }
-      fetchNextCard();
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "An unknown error occurred";
-      setUpdateError(message);
-      console.error("Failed to update progress:", error);
-    }
-  };
+    },
+    [fetchNextCard, location]
+  );
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case "1":
+        case "ArrowLeft":
+          handleUpdateProgress(0);
+          break;
+        case "2":
+        case "ArrowDown":
+          handleUpdateProgress(2);
+          break;
+        case "3":
+        case "ArrowUp":
+          handleUpdateProgress(3);
+          break;
+        case "4":
+        case "ArrowRight":
+          handleUpdateProgress(5);
+          break;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleUpdateProgress]);
 
   const renderContent = () => {
     if (loading) {
@@ -152,6 +180,9 @@ export default function MemorizerPage() {
               Easy
             </Button>
           </div>
+          <p className="mt-2 text-center text-xs text-slate-400">
+            Shortcuts: 1–4 or arrow keys
+          </p>
           {updateError && (
             <p className="mt-4 text-red-400">{updateError}</p>
           )}
