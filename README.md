@@ -56,6 +56,7 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 - **Country and continent filtering** to focus on specific regions
 - **Real-time results** as you type
 - **Advanced search** through HTML content, not just text
+- **Shareable URLs** for bookmarking specific searches and filters
 
 ### 🛠️ Easy Management
 - **One-click deletion** of unwanted locations
