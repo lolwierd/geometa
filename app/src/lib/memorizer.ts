@@ -22,7 +22,7 @@ export function calculateNextReview(
     } as const;
   }
 
-  if (quality === 0) {
+  if (quality <= 1) {
     // Lapsed card: dramatically reduce the interval but don't reset to a single day
     newLapses += 1;
     const newEaseFactor = Math.max(1.3, easeFactor - 0.2);
@@ -37,9 +37,9 @@ export function calculateNextReview(
 
   if (state === "lapsed" && repetitions === 0 && quality >= 3) {
     return {
-      repetitions: 0,
+      repetitions: 1,
       easeFactor,
-      interval: 0,
+      interval: 1,
       state: "learning",
       lapses: newLapses,
       reviewDelayMinutes: 10,
