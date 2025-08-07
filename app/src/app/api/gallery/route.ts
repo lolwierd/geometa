@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Database from "better-sqlite3";
 import { logger } from "@/lib/logger";
+import { getCountriesByContinent, getContinent, Continent } from "@/lib/continents";
 
 const db = new Database("db/geometa.db");
 
@@ -28,11 +29,12 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country");
+    const continent = searchParams.get("continent");
     const search = searchParams.get("q");
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100); // Cap at 100
     const offset = Math.max(parseInt(searchParams.get("offset") || "0"), 0);
 
-    logger.info("🔍 Gallery API request:", { country, search, limit, offset });
+    logger.info("🔍 Gallery API request:", { country, continent, search, limit, offset });
 
     let query: string;
     let countQuery: string;
@@ -73,6 +75,19 @@ export async function GET(request: NextRequest) {
           countParams.push(...countryList);
         }
       }
+
+      // Add continent filter if specified
+      if (continent && continent !== "all") {
+        const continentList = continent.split(',').filter(c => c.trim() !== '');
+        const continentCountries = Array.from(new Set(continentList.flatMap((c) => getCountriesByContinent(c as Continent))));
+        if (continentCountries.length > 0) {
+          const placeholders = continentCountries.map(() => '?').join(',');
+          query += ` AND l.country IN (${placeholders})`;
+          countQuery += ` AND l.country IN (${placeholders})`;
+          params.push(...continentCountries);
+          countParams.push(...continentCountries);
+        }
+      }
     } else {
       // Regular query without full-text search
       query = "SELECT * FROM locations WHERE 1=1";
@@ -87,6 +102,19 @@ export async function GET(request: NextRequest) {
           countQuery += ` AND country IN (${placeholders})`;
           params.push(...countryList);
           countParams.push(...countryList);
+        }
+      }
+
+      // Continent filter
+      if (continent && continent !== "all") {
+        const continentList = continent.split(',').filter(c => c.trim() !== '');
+        const continentCountries = Array.from(new Set(continentList.flatMap((c) => getCountriesByContinent(c as Continent))));
+        if (continentCountries.length > 0) {
+          const placeholders = continentCountries.map(() => '?').join(',');
+          query += ` AND country IN (${placeholders})`;
+          countQuery += ` AND country IN (${placeholders})`;
+          params.push(...continentCountries);
+          countParams.push(...continentCountries);
         }
       }
     }
@@ -118,6 +146,13 @@ export async function GET(request: NextRequest) {
     );
     const countriesResult = countriesStmt.all() as { country: string }[];
     const countries = countriesResult.map((row) => row.country);
+    const continents = Array.from(
+      new Set(
+        countries
+          .map((c) => getContinent(c))
+          .filter((c): c is Continent => Boolean(c)),
+      ),
+    ).sort();
 
     // Get some stats
     const statsStmt = db.prepare(
@@ -137,6 +172,7 @@ export async function GET(request: NextRequest) {
       locations: processedLocations,
       total,
       countries,
+      continents,
       stats,
       pagination: {
         limit,
@@ -147,6 +183,7 @@ export async function GET(request: NextRequest) {
       },
       filters: {
         country: country === "all" ? null : country?.split(','),
+        continent: continent === "all" ? null : continent?.split(','),
         search: search || null,
       },
     });

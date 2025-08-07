@@ -53,7 +53,7 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 
 ### 🔍 Powerful Search & Filtering
 - **Full-text search** across countries, meta names, and notes
-- **Country filtering** to focus on specific regions
+- **Country and continent filtering** to focus on specific regions
 - **Real-time results** as you type
 - **Advanced search** through HTML content, not just text
 
@@ -166,7 +166,7 @@ Display current configuration and connection status
 The backend provides a simple REST API:
 
 - **`GET /api/gallery`** - Retrieve locations with filtering and search
-  - Query params: `country`, `q` (search), `limit`, `offset`
+  - Query params: `country`, `continent`, `q` (search), `limit`, `offset`
 - **`POST /api/collect`** - Collect new location (called by userscript)
   - Body: `{ panoId, mapId, roundNumber, source }`
 - **`DELETE /api/gallery?id=X`** - Delete specific location
@@ -189,7 +189,7 @@ The backend provides a simple REST API:
 
 ### 🔍 Search & Filter
 - **Instant search** across all text content
-- **Country dropdown** with location counts
+- **Country and continent dropdowns** with location counts
 - **Real-time results** with no page refreshes
 - **Search highlighting** in results
 
