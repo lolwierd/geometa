@@ -71,6 +71,7 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 - "Good" answers progress intervals like 1 → 6 → 15 days
 - "Easy" answers add a 30% bonus after the second review for 1 → 6 → 20 days
 - Header shows due-today and total counts for new, review, and lapsed cards
+- Dashboard with daily review counts and success rates
 
 ## 🚀 Quick Start
 
@@ -309,7 +310,7 @@ MIT License - Use this however you'd like for personal/educational purposes.
 Future improvements might include:
 - Spaced repetition system for studying
 - Export to Anki flashcards
-- Statistics and learning progress
+- Enhanced statistics and learning progress
 - Collaborative features for sharing collections
 - Integration with other geography learning tools
 
