@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, Loader2, AlertTriangle, ChevronLeft } from "lucide-react";
+import {
+  BrainCircuit,
+  Loader2,
+  AlertTriangle,
+  ChevronLeft,
+  BarChart3,
+} from "lucide-react";
 import Link from "next/link";
 import MemorizerCard, { Location } from "@/components/MemorizerCard.tsx"; // Use the new component
 
@@ -208,12 +214,21 @@ export default function MemorizerPage() {
               <BrainCircuit className="h-7 w-7 mr-2" />
               <span className="hidden sm:inline">Meta Memorizer</span>
             </h1>
-            <div className="w-10 sm:w-36 text-right">
+            <div className="w-10 sm:w-36 flex items-center justify-end gap-2 text-right">
               {stats && !loading && (
                 <span className="text-xs sm:text-sm text-slate-500">
                   {stats.new}/{stats.newTotal} new, {stats.review}/{stats.reviewTotal} reviews, {stats.lapsed}/{stats.lapsedTotal} lapsed due today
                 </span>
               )}
+              <Link href="/stats" aria-label="Review stats">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 h-10 w-10"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
