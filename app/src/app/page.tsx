@@ -141,22 +141,28 @@ export default function Home() {
     // We intentionally omit pagination.offset from deps to avoid infinite loop
   }, [searchTerm, selectedCountries, selectedContinents, pagination.limit]);
 
-  // Auto-refresh when the tab becomes visible or the window gains focus
+  // Auto-refresh when the tab becomes visible
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        fetchLocations(true);
+        fetchRef.current(true);
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("focus", handleVisibility);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", handleVisibility);
     };
-  }, [fetchLocations]);
+  }, []);
+
+  // Auto-refresh every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRef.current(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Infinite scroll observer to automatically fetch more locations
   // Reuse the existing fetchRef so the observer callback is always fresh

@@ -190,7 +190,7 @@ The backend provides a simple REST API:
 ### 🔍 Search & Filter
 - **Instant search** across all text content
 - **Country and continent dropdowns** with location counts
-- **Real-time results** with no page refreshes
+- **Live updates** every 3 seconds and when the tab becomes visible
 - **Search highlighting** in results
 
 ### 📱 Responsive Design
