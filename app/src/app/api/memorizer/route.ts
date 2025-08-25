@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { calculateNextReview } from "@/lib/memorizer";
+import { getCountriesByContinent, getContinent, Continent } from "@/lib/continents";
 import { NextResponse } from "next/server";
 
 // Ensure numeric Unix timestamps parse as seconds in tests
@@ -40,8 +41,40 @@ interface Progress {
 }
 
 // GET: Fetch the next card to review
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const country = searchParams.get("country");
+    const continent = searchParams.get("continent");
+
+    let filterClause = "";
+    const params: string[] = [];
+
+    if (country && country !== "all") {
+      const countryList = country.split(",").filter((c) => c.trim() !== "");
+      if (countryList.length > 0) {
+        const placeholders = countryList.map(() => "?").join(",");
+        filterClause += ` AND l.country IN (${placeholders})`;
+        params.push(...countryList);
+      }
+    }
+
+    if (continent && continent !== "all") {
+      const continentList = continent.split(",").filter((c) => c.trim() !== "");
+      const continentCountries = Array.from(
+        new Set(
+          continentList.flatMap((c) =>
+            getCountriesByContinent(c as Continent),
+          ),
+        ),
+      );
+      if (continentCountries.length > 0) {
+        const placeholders = continentCountries.map(() => "?").join(",");
+        filterClause += ` AND l.country IN (${placeholders})`;
+        params.push(...continentCountries);
+      }
+    }
+
     // Prioritize cards that are due
     let nextCard = db
       .prepare(
@@ -49,7 +82,7 @@ export async function GET() {
       SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      WHERE mp.id IS NULL OR mp.due_date IS NULL OR mp.due_date <= strftime('%s','now')
+      WHERE (mp.id IS NULL OR mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))${filterClause}
       ORDER BY
         CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
         mp.due_date ASC,
@@ -63,16 +96,15 @@ export async function GET() {
       LIMIT 1
     `,
       )
-      .get() as LocationRow | undefined;
+      .get(...params) as LocationRow | undefined;
 
     // If no cards are due, just pick a random one that has been seen least
     if (!nextCard) {
-      const candidates = db
-        .prepare(
-          `
+      const fallbackQuery = `
         SELECT l.*
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
+        WHERE 1=1${filterClause}
         ORDER BY
           CASE COALESCE(mp.state, 'new')
             WHEN 'new' THEN 0
@@ -83,9 +115,8 @@ export async function GET() {
           mp.repetitions ASC,
           l.id ASC
         LIMIT 10
-      `,
-        )
-        .all() as LocationRow[];
+      `;
+      const candidates = db.prepare(fallbackQuery).all(...params) as LocationRow[];
 
       if (candidates.length > 0) {
         nextCard = candidates[Math.floor(Math.random() * candidates.length)];
@@ -100,9 +131,7 @@ export async function GET() {
     }
 
     // Gather simple statistics for UI display
-    const counts = db
-      .prepare(
-        `
+    const countsQuery = `
         SELECT
           SUM(
             CASE
@@ -145,16 +174,29 @@ export async function GET() {
           ) AS lapsed_total
         FROM locations l
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      `,
-      )
-      .get() as {
-        new_due: number;
-        review_due: number;
-        lapsed_due: number;
-        new_total: number;
-        review_total: number;
-        lapsed_total: number;
-      };
+        WHERE 1=1${filterClause}
+      `;
+    const counts = db.prepare(countsQuery).get(...params) as {
+      new_due: number;
+      review_due: number;
+      lapsed_due: number;
+      new_total: number;
+      review_total: number;
+      lapsed_total: number;
+    };
+
+    const countriesStmt = db.prepare(
+      "SELECT DISTINCT country FROM locations WHERE country IS NOT NULL ORDER BY country",
+    );
+    const countriesResult = countriesStmt.all() as { country: string }[];
+    const countries = countriesResult.map((row) => row.country);
+    const continents = Array.from(
+      new Set(
+        countries
+          .map((c) => getContinent(c))
+          .filter((c): c is Continent => Boolean(c)),
+      ),
+    ).sort();
 
     const location = {
       ...nextCard,
@@ -173,6 +215,8 @@ export async function GET() {
         reviewTotal: counts.review_total ?? 0,
         lapsedTotal: counts.lapsed_total ?? 0,
       },
+      countries,
+      continents,
     });
   } catch (error) {
     console.error("Error fetching next card:", error);

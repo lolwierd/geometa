@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { MultiSelectComboBox } from "@/components/ui/multi-select-combobox";
 import {
   BrainCircuit,
   Loader2,
@@ -33,31 +34,61 @@ export default function MemorizerPage() {
     | null
   >(null);
 
+  const [countries, setCountries] = useState<string[]>([]);
+  const [continents, setContinents] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [selectedContinents, setSelectedContinents] = useState<string[]>([]);
+
   const fetchNextCard = useCallback(async () => {
     setLoading(true);
     setError(null);
     setUpdateError(null);
 
     try {
-      const memorizerRes = await fetch("/api/memorizer");
+      const params = new URLSearchParams();
+      if (selectedCountries.length) {
+        params.set("country", selectedCountries.join(","));
+      }
+      if (selectedContinents.length) {
+        params.set("continent", selectedContinents.join(","));
+      }
+      const query = params.toString();
+      const memorizerRes = await fetch(
+        `/api/memorizer${query ? `?${query}` : ""}`,
+      );
       const memorizerData = await memorizerRes.json();
 
       if (!memorizerRes.ok || !memorizerData.success) {
         throw new Error(memorizerData.message || "Could not get next card.");
       }
-      const { location: newLocation, stats: newStats } = memorizerData;
+      const {
+        location: newLocation,
+        stats: newStats,
+        countries: apiCountries,
+        continents: apiContinents,
+      } = memorizerData;
       setStats(newStats);
       setLocation(newLocation);
+      if (apiCountries) setCountries(apiCountries);
+      if (apiContinents) setContinents(apiContinents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCountries, selectedContinents]);
 
   useEffect(() => {
     fetchNextCard();
   }, [fetchNextCard]);
+
+  const handleCountryChange = (values: string[]) => {
+    setSelectedCountries(values);
+  };
+
+  const handleContinentChange = (values: string[]) => {
+    setSelectedContinents(values);
+  };
 
   const handleUpdateProgress = useCallback(
     async (quality: number) => {
@@ -231,6 +262,24 @@ export default function MemorizerPage() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-4 flex flex-col sm:flex-row gap-4">
+          <MultiSelectComboBox
+            options={continents.map((c) => ({ value: c, label: c }))}
+            selected={selectedContinents}
+            onChange={handleContinentChange}
+            placeholder="Filter by continent..."
+            className="w-full sm:w-[220px]"
+          />
+          <MultiSelectComboBox
+            options={countries.map((c) => ({ value: c, label: c }))}
+            selected={selectedCountries}
+            onChange={handleCountryChange}
+            placeholder="Filter by country..."
+            className="w-full sm:w-[280px]"
+          />
         </div>
 
         {/* Main Content Area */}

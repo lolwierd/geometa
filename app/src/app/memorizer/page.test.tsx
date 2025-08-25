@@ -42,6 +42,8 @@ describe("MemorizerPage update errors", () => {
         reviewTotal: 0,
         lapsedTotal: 0,
       },
+      countries: [],
+      continents: [],
     };
 
     const errorResponse = { success: false, message: "Update failed" };
@@ -105,6 +107,8 @@ describe("MemorizerPage keyboard shortcuts", () => {
         reviewTotal: 0,
         lapsedTotal: 0,
       },
+      countries: [],
+      continents: [],
     };
 
     const fetchMock = vi
