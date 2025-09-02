@@ -45,7 +45,7 @@ describe('memorizer API', () => {
     const pastTs = due_date - 2 * 24 * 60 * 60;
     db.prepare('UPDATE memorizer_progress SET due_date = ? WHERE location_id = ?').run(pastTs, 1);
 
-    const res = await GET();
+    const res = await GET(new Request('http://localhost/api/memorizer'));
     const data = await res.json();
 
     expect(data.location).toEqual(
@@ -87,6 +87,28 @@ describe('memorizer API', () => {
 
     expect(diffMs).toBeGreaterThanOrEqual(9 * 60 * 1000);
     expect(diffMs).toBeLessThanOrEqual(11 * 60 * 1000);
+  });
+  it('filters by country parameter', async () => {
+    db.prepare(
+      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
+    ).run(2, 'Otherland', '[]', '{}');
+
+    const res = await GET(
+      new Request('http://localhost/api/memorizer?country=Otherland'),
+    );
+    const data = await res.json();
+
+    expect(data.location).toEqual(
+      expect.objectContaining({ id: 2, country: 'Otherland' }),
+    );
+    expect(data.stats).toEqual({
+      new: 1,
+      review: 0,
+      lapsed: 0,
+      newTotal: 1,
+      reviewTotal: 0,
+      lapsedTotal: 0,
+    });
   });
 });
 
