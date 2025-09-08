@@ -5,24 +5,8 @@ import { NextRequest } from 'next/server';
 
 describe('meta/[id] API', () => {
   beforeEach(() => {
-    // Clean up and recreate tables for each test
-    db.exec(`
-      DROP TABLE IF EXISTS locations;
-      CREATE TABLE locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pano_id TEXT,
-        map_id TEXT,
-        country TEXT,
-        country_code TEXT,
-        meta_name TEXT,
-        note TEXT,
-        footer TEXT,
-        images TEXT DEFAULT '[]',
-        raw_data TEXT DEFAULT '{}',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // Clean up test data without dropping tables
+    db.exec('DELETE FROM locations');
   });
 
   it('should return location data for valid ID', async () => {

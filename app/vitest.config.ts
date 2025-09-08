@@ -9,6 +9,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Set NODE_ENV to test to ensure test database is used
+    env: {
+      NODE_ENV: 'test',
+    },
     // Run tests sequentially to avoid database race conditions
     pool: 'forks',
     poolOptions: {

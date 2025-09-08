@@ -5,47 +5,10 @@ import { NextRequest } from 'next/server';
 
 describe('gallery API (basic functionality)', () => {
   beforeEach(() => {
-    // Clean up and recreate tables for each test
-    db.exec(`
-      DROP TABLE IF EXISTS locations;
-      CREATE TABLE locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pano_id TEXT NOT NULL,
-        map_id TEXT NOT NULL,
-        country TEXT,
-        country_code TEXT,
-        meta_name TEXT,
-        note TEXT,
-        footer TEXT,
-        images TEXT DEFAULT '[]',
-        raw_data TEXT DEFAULT '{}',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      DROP TABLE IF EXISTS memorizer_progress;
-      CREATE TABLE memorizer_progress (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        location_id INTEGER NOT NULL UNIQUE,
-        repetitions INTEGER NOT NULL DEFAULT 0,
-        ease_factor REAL NOT NULL DEFAULT 2.5,
-        "interval" INTEGER NOT NULL DEFAULT 0,
-        due_date INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        state TEXT NOT NULL DEFAULT 'new',
-        lapses INTEGER NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-
-      DROP TABLE IF EXISTS locations_fts;
-      CREATE VIRTUAL TABLE locations_fts USING fts5(
-        content=locations,
-        country,
-        meta_name,
-        note,
-        footer
-      );
-    `);
+    // Clean up test data without dropping tables
+    db.exec('DELETE FROM memorizer_reviews');
+    db.exec('DELETE FROM memorizer_progress');
+    db.exec('DELETE FROM locations');
 
     // Insert test data
     const testLocations = [
@@ -108,14 +71,14 @@ describe('gallery API (basic functionality)', () => {
 
     // Add some memorizer progress
     db.prepare(`
-      INSERT INTO memorizer_progress (location_id, state)
-      VALUES (?, ?)
-    `).run(1, 'review');
+      INSERT INTO memorizer_progress (location_id, state, next_review)
+      VALUES (?, ?, ?)
+    `).run(1, 'review', Math.floor(Date.now() / 1000));
     
     db.prepare(`
-      INSERT INTO memorizer_progress (location_id, state)
-      VALUES (?, ?)
-    `).run(2, 'new');
+      INSERT INTO memorizer_progress (location_id, state, next_review)
+      VALUES (?, ?, ?)
+    `).run(2, 'new', Math.floor(Date.now() / 1000));
   });
 
   describe('GET', () => {

@@ -9,24 +9,10 @@ global.fetch = mockFetch;
 
 describe('collect API', () => {
   beforeEach(() => {
-    // Clean up and recreate tables for each test
-    db.exec(`
-      DROP TABLE IF EXISTS locations;
-      CREATE TABLE locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pano_id TEXT NOT NULL,
-        map_id TEXT NOT NULL,
-        country TEXT,
-        country_code TEXT,
-        meta_name TEXT,
-        note TEXT,
-        footer TEXT,
-        images TEXT DEFAULT '[]',
-        raw_data TEXT DEFAULT '{}' UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // Clean up test data without dropping tables
+    db.exec('DELETE FROM memorizer_reviews');
+    db.exec('DELETE FROM memorizer_progress'); 
+    db.exec('DELETE FROM locations');
     
     // Reset all mocks
     vi.clearAllMocks();
@@ -105,13 +91,29 @@ describe('collect API', () => {
         metaName: 'Brandenburg Gate'
       };
 
-      // Insert a location first
-      const rawData = JSON.stringify(mockMetaData);
-      db.prepare(`
-        INSERT INTO locations (pano_id, map_id, country, country_code, raw_data) 
-        VALUES (?, ?, ?, ?, ?)
-      `).run('existing-pano', 'existing-map', 'Germany', 'de', rawData);
+      // Mock the fetch to return the exact same data
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.resolve(mockMetaData),
+      });
 
+      // First request to create the location
+      const firstRequest = new NextRequest('http://localhost/api/collect', {
+        method: 'POST',
+        body: JSON.stringify({
+          panoId: 'test-pano',
+          mapId: 'test-map'
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      await POST(firstRequest);
+
+      // Mock the same response for the duplicate request
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -122,8 +124,8 @@ describe('collect API', () => {
       const request = new NextRequest('http://localhost/api/collect', {
         method: 'POST',
         body: JSON.stringify({
-          panoId: 'new-pano',
-          mapId: 'new-map'
+          panoId: 'test-pano',  // Same pano_id and map_id 
+          mapId: 'test-map'     // should create same raw_data
         }),
         headers: {
           'Content-Type': 'application/json'

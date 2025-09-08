@@ -4,17 +4,13 @@ import { GET } from '../app/api/stats/route';
 
 describe('stats API', () => {
   beforeEach(() => {
-    // Clean up and recreate tables for each test
-    db.exec(`
-      DROP TABLE IF EXISTS memorizer_reviews;
-      CREATE TABLE memorizer_reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        location_id INTEGER NOT NULL,
-        quality INTEGER NOT NULL,
-        reviewed_at INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // Clean up test data without dropping tables
+    // Use try-catch in case tables don't exist yet
+    try {
+      db.exec('DELETE FROM memorizer_reviews');
+    } catch (e) {
+      // Table might not exist yet, that's ok
+    }
   });
 
   it('should return empty data array when no reviews exist', async () => {
@@ -161,6 +157,21 @@ describe('stats API', () => {
 
   it('should properly aggregate reviews across multiple locations per day', async () => {
     const today = Math.floor(Date.now() / 1000);
+    
+    // Ensure the memorizer_reviews table exists for this test
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS memorizer_reviews (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          location_id INTEGER NOT NULL,
+          quality INTEGER NOT NULL,
+          reviewed_at INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    } catch (e) {
+      // Table might already exist, that's ok
+    }
     
     // Insert multiple reviews for same locations on same day
     db.prepare('INSERT INTO memorizer_reviews (location_id, quality, reviewed_at) VALUES (?, ?, ?)').run(1, 5, today);
