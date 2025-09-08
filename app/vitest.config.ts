@@ -9,6 +9,13 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Run tests sequentially to avoid database race conditions
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
   },
   esbuild: {
     jsx: 'automatic',

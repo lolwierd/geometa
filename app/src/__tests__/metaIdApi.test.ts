@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../lib/db';
 import { GET } from '../app/api/meta/[id]/route';
 import { NextRequest } from 'next/server';
