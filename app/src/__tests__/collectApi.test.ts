@@ -14,6 +14,11 @@ describe('collect API', () => {
     db.exec('DELETE FROM memorizer_progress'); 
     db.exec('DELETE FROM locations');
     
+    // Reset auto-increment sequences to ensure predictable IDs
+    db.exec("DELETE FROM sqlite_sequence WHERE name='locations'");
+    db.exec("DELETE FROM sqlite_sequence WHERE name='memorizer_progress'");
+    db.exec("DELETE FROM sqlite_sequence WHERE name='memorizer_reviews'");
+    
     // Reset all mocks
     vi.clearAllMocks();
   });
