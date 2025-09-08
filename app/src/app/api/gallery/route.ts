@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import Database from "better-sqlite3";
 import { logger } from "@/lib/logger";
 import { getCountriesByContinent, getContinent, Continent } from "@/lib/continents";
-
-const db = new Database("db/geometa.db");
+import { db } from "@/lib/db";
 
 interface LocationRow {
   id: number;

@@ -49,7 +49,7 @@ if (isTest) {
       repetitions INTEGER NOT NULL DEFAULT 0,
       easiness_factor REAL NOT NULL DEFAULT 2.5,
       ease_factor REAL NOT NULL DEFAULT 2.5,
-      next_review INTEGER NOT NULL,
+      next_review INTEGER NOT NULL DEFAULT (strftime('%s','now')),
       interval_days INTEGER NOT NULL DEFAULT 1,
       "interval" INTEGER NOT NULL DEFAULT 0,
       due_date INTEGER NOT NULL DEFAULT (strftime('%s','now')),
