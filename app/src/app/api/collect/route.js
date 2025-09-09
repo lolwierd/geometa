@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import Database from "better-sqlite3";
+import { db } from "@/lib/db";
 import { getCountryCode } from "@/lib/countryCodes";
 import { logger } from "@/lib/logger";
-
-const db = new Database("db/geometa.db");
 
 async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   const params = new URLSearchParams({

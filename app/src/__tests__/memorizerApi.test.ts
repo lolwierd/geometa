@@ -4,31 +4,14 @@ import { GET, POST } from '../app/api/memorizer/route';
 
 describe('memorizer API', () => {
   beforeEach(() => {
-    db.exec(`
-      DROP TABLE IF EXISTS locations;
-      CREATE TABLE locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        country TEXT,
-        images TEXT,
-        raw_data TEXT
-      );
-      DROP TABLE IF EXISTS memorizer_progress;
-      CREATE TABLE memorizer_progress (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        location_id INTEGER NOT NULL UNIQUE,
-        repetitions INTEGER NOT NULL DEFAULT 0,
-        ease_factor REAL NOT NULL DEFAULT 2.5,
-        "interval" INTEGER NOT NULL DEFAULT 0,
-        due_date INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-        state TEXT NOT NULL DEFAULT 'new',
-        lapses INTEGER NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // Clean up test data without dropping tables
+    db.exec('DELETE FROM memorizer_reviews');
+    db.exec('DELETE FROM memorizer_progress');
+    db.exec('DELETE FROM locations');
+    
     db.prepare(
-      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
-    ).run(1, "Testland", "[]", "{}");
+      "INSERT INTO locations (id, pano_id, map_id, country, images, raw_data) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run(1, "test-pano", "test-map", "Testland", "[]", "{}");
   });
 
   it('returns scheduled cards as due after time advances', async () => {
@@ -68,8 +51,8 @@ describe('memorizer API', () => {
 
   it('re-queues lapsed cards for a quick follow-up review', async () => {
     db.prepare(
-      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, state, lapses) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'lapsed', 1)",
-    ).run(1, 0, 2.5, 7);
+      "INSERT INTO memorizer_progress (location_id, repetitions, ease_factor, \"interval\", due_date, next_review, state, lapses) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'lapsed', 1)",
+    ).run(1, 0, 2.5, 7, Math.floor(Date.now() / 1000));
 
     const before = Date.now();
 
@@ -90,8 +73,8 @@ describe('memorizer API', () => {
   });
   it('filters by country parameter', async () => {
     db.prepare(
-      "INSERT INTO locations (id, country, images, raw_data) VALUES (?, ?, ?, ?)",
-    ).run(2, 'Otherland', '[]', '{}');
+      "INSERT INTO locations (id, pano_id, map_id, country, images, raw_data) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run(2, 'test-pano-2', 'test-map-2', 'Otherland', '[]', '{"lat": 123, "lng": 456}');
 
     const res = await GET(
       new Request('http://localhost/api/memorizer?country=Otherland'),
