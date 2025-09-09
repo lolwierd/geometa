@@ -14,6 +14,7 @@ describe("MetaCard", () => {
       note: malicious,
       footer: null,
       images: [],
+      raw_data: {},
       pano_id: "",
       map_id: "",
       created_at: "2020-01-01T00:00:00Z",

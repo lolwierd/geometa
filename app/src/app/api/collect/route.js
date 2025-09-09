@@ -86,6 +86,23 @@ export async function POST(request) {
       );
     }
 
+    // Validate field types and lengths to prevent potential issues
+    if (typeof panoId !== 'string' || typeof mapId !== 'string' ||
+        panoId.length > 256 || mapId.length > 256) {
+      logger.info("❌ Invalid field types or lengths");
+      return NextResponse.json(
+        { error: "panoId and mapId must be strings under 256 characters" },
+        {
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        },
+      );
+    }
+
 
 
     // Fetch meta data from LearnableMeta API

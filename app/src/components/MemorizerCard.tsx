@@ -108,7 +108,7 @@ export default function MemorizerCard({ location }: MemorizerCardProps) {
                         height={24}
                         alt={`${location.country} flag`}
                         className="rounded-sm border-slate-600 hover:border-blue-400 transition-colors"
-                        unoptimized
+                        unoptimized={true}
                         onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                       />
                     </a>
@@ -119,7 +119,7 @@ export default function MemorizerCard({ location }: MemorizerCardProps) {
                       height={24}
                       alt={`${location.country} flag`}
                       className="rounded-sm border-slate-600 flex-shrink-0"
-                      unoptimized
+                      unoptimized={true}
                       onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                     />
                   )}
@@ -153,7 +153,7 @@ export default function MemorizerCard({ location }: MemorizerCardProps) {
                 width={1920}
                 height={1080}
                 className="w-full max-h-[60vh] object-contain rounded-md"
-                unoptimized
+                unoptimized={true}
                 onError={() => handleImageError(images[currentImageIndex])}
               />
 

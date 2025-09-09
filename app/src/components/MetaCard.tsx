@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type MouseEvent } from "react";
 import Image from "next/image";
 import DOMPurify from "dompurify";
 import {
@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,16 +22,36 @@ import {
   X,
 } from "lucide-react";
 
-export default function MetaCard({ location, onDelete }) {
+export interface Location {
+  id: number;
+  pano_id: string;
+  map_id: string;
+  country: string;
+  country_code: string | null;
+  meta_name: string | null;
+  note: string | null;
+  footer: string | null;
+  images: string[];
+  raw_data: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MetaCardProps {
+  location: Location;
+  onDelete: (id: number) => void;
+}
+
+export default function MetaCard({ location, onDelete }: MetaCardProps) {
   // --- STATE MANAGEMENT ---
   const [showModal, setShowModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageError, setImageError] = useState({});
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [showTechDetails, setShowTechDetails] = useState(false);
-  const techDetailsRef = useRef(null);
+  const techDetailsRef = useRef<HTMLDivElement | null>(null);
 
   // --- HANDLER FUNCTIONS ---
-  const handleDelete = async (e) => {
+  const handleDelete = async (e: MouseEvent) => {
     e.stopPropagation(); // Prevent modal from opening
     if (
       confirm(
@@ -48,12 +69,13 @@ export default function MetaCard({ location, onDelete }) {
         onDelete(location.id);
       } catch (error) {
         console.error("Failed to delete location:", error);
-        alert(`Failed to delete location: ${error.message}`);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        alert(`Failed to delete location: ${message}`);
       }
     }
   };
 
-  const handleModalOpenChange = (open) => {
+  const handleModalOpenChange = (open: boolean) => {
     setShowModal(open);
     // Reset state when modal is closed to ensure it's always hidden on next open
     if (!open) {
@@ -62,7 +84,7 @@ export default function MetaCard({ location, onDelete }) {
     }
   };
 
-  const handleImageError = (imageUrl) => {
+  const handleImageError = (imageUrl: string) => {
     setImageError((prev) => ({ ...prev, [imageUrl]: true }));
   };
 
@@ -80,15 +102,15 @@ export default function MetaCard({ location, onDelete }) {
     : [];
 
   // Generate proxied URL that goes through our cache route for caching
-  const proxyUrl = (u) => (u ? `/api/img?u=${encodeURIComponent(u)}` : "");
+  const proxyUrl = (u: string) => (u ? `/api/img?u=${encodeURIComponent(u)}` : "");
 
-  const stripHtml = (html) => {
+  const stripHtml = (html: string | null) => {
     if (!html) return "";
     const doc = new DOMParser().parseFromString(html, "text/html");
     return doc.body.textContent || "";
   };
 
-  const truncateText = (text, maxLength = 150) => {
+  const truncateText = (text: string | null, maxLength = 150) => {
     if (!text) return "";
     const stripped = stripHtml(text);
     return stripped.length > maxLength
@@ -96,7 +118,7 @@ export default function MetaCard({ location, onDelete }) {
       : stripped;
   };
 
-  const extractLink = (html) => {
+  const extractLink = (html: string | null) => {
     if (!html) return null;
     const doc = new DOMParser().parseFromString(html, "text/html");
     const link = doc.querySelector("a");
@@ -158,8 +180,8 @@ export default function MetaCard({ location, onDelete }) {
                   src={proxyUrl(`https://flagcdn.com/40x30/${location.country_code.toLowerCase()}.png`)} width={20} height={15}
                   alt={`${location.country} flag`}
                   className="rounded-sm"
-                  unoptimized
-                  onError={(e) => (e.target.style.display = "none")}
+                  unoptimized={true}
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                 />
               )}
               <div className="min-w-0 flex-1">
@@ -189,7 +211,7 @@ export default function MetaCard({ location, onDelete }) {
                     width={320}
                     height={180}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
+                    unoptimized={true}
                     onError={(e) => handleImageError(images[0])}
                   />
                 </div>
@@ -252,8 +274,8 @@ export default function MetaCard({ location, onDelete }) {
                           src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                           alt={`${location.country} flag`}
                           className="rounded-sm border-slate-600 hover:border-blue-400 transition-colors"
-                          unoptimized
-                          onError={(e) => (e.target.style.display = "none")}
+                          unoptimized={true}
+                          onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                         />
                       </a>
                     ) : (
@@ -261,8 +283,8 @@ export default function MetaCard({ location, onDelete }) {
                         src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                         alt={`${location.country} flag`}
                         className="rounded-sm border-slate-600 flex-shrink-0"
-                        unoptimized
-                        onError={(e) => (e.target.style.display = "none")}
+                        unoptimized={true}
+                        onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                       />
                     )}
                   </>
@@ -275,6 +297,9 @@ export default function MetaCard({ location, onDelete }) {
                 </span>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detailed view of location meta information including images and technical details
+            </DialogDescription>
             <DialogClose asChild>
               <Button
                 variant="ghost"
@@ -304,7 +329,7 @@ export default function MetaCard({ location, onDelete }) {
                     width={1920}
                     height={1080}
                     className="w-full max-h-[60vh] object-contain rounded-md"
-                    unoptimized
+                    unoptimized={true}
                     onError={(e) => handleImageError(images[currentImageIndex])}
                   />
 

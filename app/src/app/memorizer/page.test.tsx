@@ -6,7 +6,7 @@ import "@testing-library/jest-dom/vitest";
 
 vi.mock("next/image", () => ({
   __esModule: true,
-  default: (props: any) => <img {...props} />,
+  default: (props: any) => <img {...props} alt={props.alt || ""} />,
 }));
 
 vi.mock("next/link", () => ({

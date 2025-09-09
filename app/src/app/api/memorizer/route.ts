@@ -1,16 +1,20 @@
 import { db } from "@/lib/db";
 import { calculateNextReview } from "@/lib/memorizer";
 import { getCountriesByContinent, getContinent, Continent } from "@/lib/continents";
+import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
 // Ensure numeric Unix timestamps parse as seconds in tests
-const originalDateParse = Date.parse;
-Date.parse = ((input: string) => {
-  if (/^\d+$/.test(input)) {
-    return Number(input) * 1000;
-  }
-  return originalDateParse(input);
-}) as typeof Date.parse;
+// Only apply this override in test environment to avoid affecting production
+if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
+  const originalDateParse = Date.parse;
+  Date.parse = ((input: string) => {
+    if (/^\d+$/.test(input)) {
+      return Number(input) * 1000;
+    }
+    return originalDateParse(input);
+  }) as typeof Date.parse;
+}
 
 interface LocationRow {
   id: number;
@@ -27,7 +31,7 @@ function safeJsonParse<T>(jsonString: string | null, fallback: T): T {
     const parsed = JSON.parse(jsonString);
     return parsed ?? fallback;
   } catch (error) {
-    console.warn("Failed to parse JSON:", jsonString, error);
+    logger.warn("Failed to parse JSON:", jsonString, error);
     return fallback;
   }
 }
@@ -219,7 +223,7 @@ export async function GET(request: Request) {
       continents,
     });
   } catch (error) {
-    console.error("Error fetching next card:", error);
+    logger.error("Error fetching next card:", error);
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 },
@@ -306,7 +310,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message: "Progress updated" });
   } catch (error) {
-    console.error("Error updating progress:", error);
+    logger.error("Error updating progress:", error);
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 },
