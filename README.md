@@ -1,40 +1,21 @@
-# GeoMeta Gallery v2.0
+# GeoMeta Gallery
 
-**A dramatically simplified personal tool for collecting and studying GeoGuessr meta information.**
+**A personal tool for collecting and studying GeoGuessr meta information with spaced repetition learning.**
 
-Gone are the days of complex browser extensions, screenshot processing, and image storage overhead. Version 2.0 is a complete rewrite that focuses on what matters: **clean data collection and beautiful presentation**.
+GeoMeta Gallery helps you become better at GeoGuessr by automatically collecting location metadata as you play and providing a powerful study system with spaced repetition algorithms.
 
-## 🎯 What's New in v2.0
-
-### ❌ What We Removed
-- Complex browser extension with screenshot capture
-- Image processing and storage overhead  
-- CORS workarounds and background scripts
-- Virtual scrolling and performance bottlenecks
-- Database bloat from storing binary images
-
-### ✅ What We Added
-- **Simple userscript** for effortless data collection
-- **Direct API integration** with LearnableMeta
-- **Beautiful card-based UI** with native React components
-- **Full-text search** across all metadata content
-- **90% smaller database** using JSON instead of images
-- **Much faster performance** with no image processing
-- **Responsive design** that works on all screen sizes
-
-## 🏗️ Architecture
+## 🏗️ How It Works
 
 ```
-OLD v1.0: Userscript → Browser Extension → Screenshots → Image Processing → Gallery
-NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → Card UI
+GeoGuessr → Userscript → Backend API → LearnableMeta API → SQLite Database → Study Interface
 ```
 
-**Simple and efficient:**
-1. Play GeoGuessr with userscript installed
-2. On round end, userscript sends location data to your backend
-3. Backend fetches rich meta information from LearnableMeta API
-4. Data stored as lightweight JSON in SQLite database
-5. Frontend renders beautiful, searchable cards with all the meta content
+**Simple workflow:**
+1. Play GeoGuessr with the userscript installed
+2. Location data is automatically collected at round end
+3. Rich meta information is fetched from LearnableMeta API
+4. Data is stored as lightweight JSON in SQLite database
+5. Study collected locations using spaced repetition in a beautiful interface
 
 ## ✨ Features
 
@@ -44,45 +25,42 @@ NEW v2.0: Userscript → Backend API → LearnableMeta API → JSON Storage → 
 - **Duplicate detection** prevents storing the same location twice
 - **Multiple game modes** supported (regular, challenges, live challenges)
 
-### 🎨 Beautiful UI
-- **Card-based design** with country flags and preview images
-- **Rich content display** with HTML notes (sanitized via DOMPurify) and reference images
+### 🧠 Spaced Repetition Learning
+- **Built-in study mode** using simplified SM-2 algorithm
+- **Smart scheduling**: "Again" (1 week), "Hard" (half interval), "Good" (1→6→15 days), "Easy" (1.3× bonus)
+- **Progress tracking** with daily review counts and success rates
+- **Study dashboard** showing due cards and learning statistics
+
+### 🎨 Beautiful Interface
+- **Card-based design** with country flags and preview images  
+- **Rich content display** with HTML notes and reference images
 - **Detailed modal view** for studying individual locations
-- **Image carousel** for locations with multiple reference photos
-- **Responsive layout** that adapts to any screen size
+- **Image carousels** for locations with multiple photos
+- **Fully responsive** design for desktop and mobile
 
 ### 🔍 Powerful Search & Filtering
 - **Full-text search** across countries, meta names, and notes
-- **Country and continent filtering** to focus on specific regions
+- **Advanced filtering** by country, continent, and other metadata
 - **Real-time results** as you type
-- **Advanced search** through HTML content, not just text
-- **Shareable URLs** for bookmarking specific searches and filters
+- **Shareable URLs** for bookmarking searches and filters
 
 ### 🛠️ Easy Management
 - **One-click deletion** of unwanted locations
 - **Automatic organization** by collection date
 - **Technical metadata** for debugging and reference
-- **Export capabilities** built into the data structure
-
-### 🧠 Spaced Repetition Memorizer
-- Built-in study mode using a simplified SM-2 algorithm
-- "Again" answers mark the card as lapsed and count toward lapsed stats
-- "Hard" answers halve the current interval without lapsing
-- "Good" answers progress intervals like 1 → 6 → 15 days
-- "Easy" answers add a 30% bonus after the second review for 1 → 6 → 20 days
-- Header shows due-today and total counts for new, review, and lapsed cards
-- Dashboard with daily review counts and success rates
+- **JSON-based storage** for easy data export
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
+### Prerequisites
 - **Node.js 18+** installed on your system
 - **Tampermonkey** (Chrome) or **Violentmonkey** (Firefox) browser extension
 
-### 2. Setup Backend
+### 1. Setup Backend
 ```bash
-# Clone or download the project
-cd geometa-gemini/app
+# Clone the repository
+git clone https://github.com/lolwierd/geometa.git
+cd geometa/app
 
 # Install dependencies
 npm install
@@ -96,19 +74,20 @@ npm run dev
 
 Your gallery will be available at **http://localhost:3000**
 
-### 3. Install Userscript
+### 2. Install Userscript
 1. **Open Tampermonkey** dashboard in your browser
 2. **Click "Create a new script"**
 3. **Delete the template** and paste the contents of `userscript.js`
 4. **Save the script** (Ctrl+S)
 5. **Configure API URL** via Tampermonkey menu (default: http://localhost:3000)
 
-See [USERSCRIPT.md](USERSCRIPT.md) for detailed instructions and advanced options for all GeoMeta userscripts.
+See [USERSCRIPT.md](USERSCRIPT.md) for detailed installation instructions and advanced options.
 
-### 4. Start Collecting
+### 3. Start Collecting
 - **Play GeoGuessr** as normal
 - **Watch for notifications** showing successful collection
 - **Check your gallery** to see new locations appear as beautiful cards
+- **Use the memorizer** at `/memorizer` to study collected locations with spaced repetition
 
 ## 🎮 Supported Game Modes
 
@@ -118,50 +97,34 @@ See [USERSCRIPT.md](USERSCRIPT.md) for detailed instructions and advanced option
 - ✅ **Live Challenges** - Real-time multiplayer
 - ✅ **Map Testing** - When playing in map maker
 
-## 📊 Database Schema
+## 🏗️ Tech Stack
 
-The new lightweight schema stores everything as JSON:
+### Backend
+- **Next.js 15** with API routes and React 19
+- **SQLite** with better-sqlite3 for fast local storage
+- **Full-text search** using SQLite FTS5
 
-```sql
-CREATE TABLE locations (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  pano_id TEXT NOT NULL UNIQUE,        -- Google Street View panorama ID
-  map_id TEXT NOT NULL,                -- GeoGuessr map identifier
-  country TEXT NOT NULL,               -- Country name with flag support
-  country_code TEXT,                   -- ISO country code for flags
-  meta_name TEXT,                      -- Specific meta category
-  note TEXT,                           -- Rich HTML content with learning tips
-  footer TEXT,                         -- Additional information
-  images TEXT DEFAULT '[]',            -- JSON array of image URLs
-  raw_data TEXT DEFAULT '{}',          -- Full API response for future use
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+### Frontend
+- **React 19** with TypeScript
+- **Tailwind CSS** + Radix UI primitives for beautiful components
+- **Framer Motion** for smooth animations
+- **Lucide React** for consistent icons
 
-**Full-text search** is built-in with SQLite FTS5 for instant searching across all content.
+### Data Collection
+- **Browser userscripts** for automatic GeoGuessr integration
+- **LearnableMeta API** for rich geographical metadata
+- **JSON-based storage** for efficient data management
 
-## 🔧 Configuration
+## ⚙️ Configuration
 
-Access settings via **Tampermonkey menu** → **GeoMeta Collector**:
+Access userscript settings via **Tampermonkey menu** → **GeoMeta Collector**:
 
-### ⚙️ Configure API URL
-Set your backend URL (default: `http://localhost:3000`)
-
-### 🔄 Toggle Collection  
-Enable/disable automatic collection while playing
-
-### 🔔 Toggle Notifications
-Show/hide success notifications in GeoGuessr
-
-### 🐛 Toggle Debug Mode
-Enable detailed logging for troubleshooting
-
-### 🧪 Test Collection
-Verify your setup is working correctly
-
-### 📊 Show Status
-Display current configuration and connection status
+- **🔧 API URL**: Set your backend URL (default: `http://localhost:3000`)
+- **🔄 Toggle Collection**: Enable/disable automatic data collection
+- **🔔 Toggle Notifications**: Show/hide success notifications in GeoGuessr
+- **🐛 Debug Mode**: Enable detailed logging for troubleshooting
+- **🧪 Test Collection**: Verify your setup is working correctly
+- **📊 Connection Status**: Display current configuration and connectivity
 
 ## 🌐 API Endpoints
 
@@ -169,153 +132,113 @@ The backend provides a simple REST API:
 
 - **`GET /api/gallery`** - Retrieve locations with filtering and search
   - Query params: `country`, `continent`, `q` (search), `limit`, `offset`
-- **`POST /api/collect`** - Collect new location (called by userscript)
+- **`POST /api/collect`** - Collect new location data (called by userscript)
   - Body: `{ panoId, mapId, roundNumber, source }`
 - **`DELETE /api/gallery?id=X`** - Delete specific location
-- **`GET /api/img?u=<URL>`** - Proxies & caches remote images from *learnablemeta.com* only (returns `Cache-Control: max-age=31536000, immutable`; `x-proxy-cache: hit|miss`)
+- **`GET /api/memorizer`** - Get next card for spaced repetition study
+- **`POST /api/memorizer/[id]`** - Update review progress for a card
+- **`GET /api/stats`** - Get learning statistics and progress data
 
 ## 🎨 Gallery Features
 
-### 🖼️ Card View
-- **Compact cards** showing country, flag, meta name, and preview
-- **Hover effects** reveal action buttons (view/delete)
-- **Click anywhere** to open detailed modal
-- **Visual indicators** for image count and collection date
+### 🖼️ Card Interface
+- **Elegant card design** showing country flags, meta names, and preview images
+- **Hover interactions** reveal action buttons (view details, delete)
+- **Click anywhere** to open detailed study modal
+- **Visual indicators** for image count and collection timestamps
+- **Responsive grid layout** (1-5 columns based on screen size)
 
-### 🍂 Detail Modal
-- **Full-screen view** with all location information
-- **Image carousel** for multiple reference photos
-- **Rich HTML rendering** of notes and footer content
-- **Technical metadata** for debugging
-- **Keyboard navigation** for power users
+### 🔍 Advanced Search
+- **Full-text search** across all location content
+- **Smart filtering** by country, continent, and metadata
+- **Real-time results** with search term highlighting  
+- **Shareable URLs** for bookmarked searches
+- **Live updates** every 3 seconds and on tab focus
 
-### 🔍 Search & Filter
-- **Instant search** across all text content
-- **Country and continent dropdowns** with location counts
-- **Live updates** every 3 seconds and when the tab becomes visible
-- **Search highlighting** in results
-
-### 📱 Responsive Design
-- **Mobile-friendly** interface
-- **Adaptive grid** (1-5 columns based on screen size)
-- **Touch-optimized** interactions
-- **Fast loading** even with hundreds of locations
+### 🧠 Study Mode
+- **Spaced repetition interface** for effective learning
+- **Detailed location modals** with all collected metadata
+- **Image carousels** for locations with multiple reference photos
+- **Progress tracking** and learning statistics
+- **Keyboard shortcuts** for efficient studying
 
 ## 🐛 Troubleshooting
 
 ### Backend Issues
-
 **Backend won't start:**
 ```bash
 rm -rf node_modules package-lock.json
-npm install
-npm run dev
+npm install && npm run dev
 ```
 
 **Database errors:**
 ```bash
-npm run db:init  # Recreate database
+npm run db:init  # Reinitialize database
 ```
 
 ### Userscript Issues
-
-**No notifications in GeoGuessr:**
-- Check Tampermonkey dashboard - ensure script is enabled
-- Verify API URL in Tampermonkey menu
+**No collection notifications:**
+- Verify Tampermonkey script is enabled
+- Check API URL in Tampermonkey menu settings
 - Enable debug mode and check browser console
 
-**"Network error" notifications:**
+**"Network error" notifications:**  
 - Ensure backend is running at http://localhost:3000
-- Check firewall settings
-- Try the test collection feature
+- Test collection feature in Tampermonkey menu
+- Check firewall or antivirus blocking localhost connections
 
 ### Gallery Issues
-
 **Empty gallery:**
-- Play some GeoGuessr rounds to collect data
-- Check that userscript is working (notifications appear)
-- Verify database has data: check backend logs
+- Play GeoGuessr rounds to collect data first
+- Verify userscript notifications are appearing
+- Check that database was initialized: `npm run db:init`
 
 **"No meta available" messages:**
-This is normal! Not all GeoGuessr locations have meta information in the LearnableMeta database. Only certain popular maps are supported.
+This is normal - not all GeoGuessr locations have metadata in the LearnableMeta database.
 
-## 🔄 Migration from v1.0
+## 🚀 Future Enhancements
 
-If you're upgrading from the old screenshot-based system:
+### Planned Features
+- **🎯 Advanced Study Modes**: Customizable spaced repetition intervals and difficulty algorithms
+- **📊 Enhanced Analytics**: Detailed learning progress visualization and success rate tracking
+- **🗺️ Map Integration**: Interactive maps showing collected locations and learning progress
+- **📱 Mobile App**: Native mobile companion for on-the-go studying
+- **☁️ Cloud Sync**: Optional cloud backup and sync across devices
+- **👥 Community Features**: Share collections and compete with other learners
 
-1. **Backup your data** (optional - screenshots won't be migrated)
-2. **Run the migration**: `npm run db:init`
-3. **Remove old browser extension**
-4. **Install new userscript**
-5. **Start collecting fresh data**
+### Potential Integrations
+- **📚 Anki Export**: Direct export to Anki flashcard format
+- **🎮 Additional Game Support**: Seterra, World Geography Games integration
+- **🌐 Wikipedia Integration**: Rich contextual information for studied locations
+- **🎨 Custom Themes**: Personalized UI themes and card designs
+- **🔊 Audio Pronunciation**: Country and city name pronunciation guides
+- **🏆 Achievement System**: Gamified learning milestones and badges
 
-See `MIGRATION.md` for detailed step-by-step instructions.
-
-## 🏗️ Development
-
-### Tech Stack
-- **Backend:** Next.js 15 with API routes
-- **Database:** SQLite with better-sqlite3
-- **Frontend:** React 19 with TypeScript
-- **UI:** Tailwind CSS + Radix UI primitives
-- **Search:** SQLite FTS5 full-text search
-- **Icons:** Lucide React
-
-### Project Structure
-```
-app/
-├── src/
-│   ├── app/              # Next.js app directory
-│   │   ├── api/          # API routes
-│   │   ├── globals.css   # Global styles
-│   │   ├── layout.tsx    # Root layout
-│   │   └── page.tsx      # Main gallery page
-│   ├── components/       # React components
-│   │   ├── ui/           # Reusable UI components
-│   │   └── MetaCard.jsx  # Location card component
-│   └── lib/              # Utilities and database connection
-├── db/                   # Database schema and initialization
-└── package.json          # Dependencies and scripts
-```
-
-### Running in Development
-```bash
-cd app
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run db:init      # Initialize database
-```
-
-## 📈 Performance
-
-Compared to v1.0:
-- **90% smaller database** (JSON vs binary images)
-- **10x faster loading** (no image processing)
-- **Instant search** (SQLite FTS5)
-- **Better UX** (native React components)
-- **Easier maintenance** (simpler codebase)
+### Technical Improvements
+- **⚡ Performance**: Lazy loading, virtual scrolling for large collections
+- **🔄 Real-time Sync**: WebSocket-based real-time updates across browser tabs
+- **🗄️ Advanced Database**: PostgreSQL option for advanced querying capabilities
+- **🔌 Plugin Architecture**: Custom userscript and UI extensions
+- **📤 Data Portability**: Import/export in multiple formats (JSON, CSV, KML)
+- **🛡️ Enhanced Security**: Optional authentication and encrypted storage
 
 ## 🤝 Contributing
 
-This is a personal learning tool, but you're welcome to fork and customize it for your own use. The new architecture is much simpler to understand and modify.
+This project welcomes contributions! Whether you're interested in:
+- 🐛 Bug fixes and improvements
+- ✨ New feature development  
+- 📚 Documentation enhancements
+- 🧪 Testing and quality assurance
+- 🎨 UI/UX improvements
+
+Feel free to fork the repository and submit pull requests. The codebase is designed to be approachable and well-documented for developers of all skill levels.
 
 ## 📄 License
 
-MIT License - Use this however you'd like for personal/educational purposes.
-
-## 🎯 What's Next
-
-Future improvements might include:
-- Spaced repetition system for studying
-- Export to Anki flashcards
-- Enhanced statistics and learning progress
-- Collaborative features for sharing collections
-- Integration with other geography learning tools
+**MIT License** - Feel free to use, modify, and distribute for personal or educational purposes.
 
 ---
 
-**Happy collecting!** 🌍✨
+**Start your geography learning journey today!** 🌍✨
 
-The new GeoMeta Gallery makes learning geography from GeoGuessr effortless and enjoyable.
+GeoMeta Gallery makes studying GeoGuessr locations engaging and scientifically effective.
