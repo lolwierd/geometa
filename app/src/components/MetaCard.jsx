@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,7 @@ export default function MetaCard({ location, onDelete }) {
                   src={proxyUrl(`https://flagcdn.com/40x30/${location.country_code.toLowerCase()}.png`)} width={20} height={15}
                   alt={`${location.country} flag`}
                   className="rounded-sm"
-                  unoptimized
+                  unoptimized={true}
                   onError={(e) => (e.target.style.display = "none")}
                 />
               )}
@@ -189,7 +190,7 @@ export default function MetaCard({ location, onDelete }) {
                     width={320}
                     height={180}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
+                    unoptimized={true}
                     onError={(e) => handleImageError(images[0])}
                   />
                 </div>
@@ -252,7 +253,7 @@ export default function MetaCard({ location, onDelete }) {
                           src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                           alt={`${location.country} flag`}
                           className="rounded-sm border-slate-600 hover:border-blue-400 transition-colors"
-                          unoptimized
+                          unoptimized={true}
                           onError={(e) => (e.target.style.display = "none")}
                         />
                       </a>
@@ -261,7 +262,7 @@ export default function MetaCard({ location, onDelete }) {
                         src={proxyUrl(`https://flagcdn.com/64x48/${location.country_code.toLowerCase()}.png`)} width={32} height={24}
                         alt={`${location.country} flag`}
                         className="rounded-sm border-slate-600 flex-shrink-0"
-                        unoptimized
+                        unoptimized={true}
                         onError={(e) => (e.target.style.display = "none")}
                       />
                     )}
@@ -275,6 +276,9 @@ export default function MetaCard({ location, onDelete }) {
                 </span>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Detailed view of location meta information including images and technical details
+            </DialogDescription>
             <DialogClose asChild>
               <Button
                 variant="ghost"
@@ -304,7 +308,7 @@ export default function MetaCard({ location, onDelete }) {
                     width={1920}
                     height={1080}
                     className="w-full max-h-[60vh] object-contain rounded-md"
-                    unoptimized
+                    unoptimized={true}
                     onError={(e) => handleImageError(images[currentImageIndex])}
                   />
 
