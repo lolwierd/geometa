@@ -56,7 +56,14 @@ export default function MemorizerPage() {
       const memorizerRes = await fetch(
         `/api/memorizer${query ? `?${query}` : ""}`,
       );
-      const memorizerData = await memorizerRes.json();
+      const memorizerData = await memorizerRes.json() as {
+        success: boolean;
+        message?: string;
+        location?: any;
+        stats?: any;
+        countries?: string[];
+        continents?: string[];
+      };
 
       if (!memorizerRes.ok || !memorizerData.success) {
         throw new Error(memorizerData.message || "Could not get next card.");
@@ -100,7 +107,7 @@ export default function MemorizerPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ locationId: location.id, quality }),
         });
-        const data = await res.json();
+        const data = await res.json() as { success: boolean; message?: string };
         if (!res.ok || !data.success) {
           throw new Error(data.message || "Failed to update progress.");
         }

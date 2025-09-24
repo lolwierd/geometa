@@ -234,7 +234,8 @@ export async function GET(request: Request) {
 // POST: Update the progress of a card
 export async function POST(request: Request) {
   try {
-    const { locationId, quality } = await request.json();
+    const requestBody = await request.json() as { locationId: number; quality: number };
+    const { locationId, quality } = requestBody;
 
     const allowedQualities = new Set([0, 1, 2, 3, 4, 5]);
     if (

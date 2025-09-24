@@ -35,10 +35,11 @@ export default function ProgressDashboard() {
     fetch("/api/stats")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setStats(data.data);
+        const typedData = data as { success: boolean; data?: DailyStat[]; message?: string };
+        if (typedData.success) {
+          setStats(typedData.data || []);
         } else {
-          setError(data.message || "Failed to load stats");
+          setError(typedData.message || "Failed to load stats");
         }
       })
       .catch((err) => setError(err.message));
