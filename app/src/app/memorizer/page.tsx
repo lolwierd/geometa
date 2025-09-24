@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/config";
 import MemorizerCard, { Location } from "@/components/MemorizerCard.tsx"; // Use the new component
 
 export default function MemorizerPage() {
@@ -95,7 +96,7 @@ export default function MemorizerPage() {
       if (!location) return;
       setUpdateError(null);
       try {
-        const res = await fetch("/api/memorizer", {
+        const res = await fetch(`${API_BASE_URL}/memorizer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ locationId: location.id, quality }),

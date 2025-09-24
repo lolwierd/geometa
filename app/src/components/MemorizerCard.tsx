@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type MouseEvent } from "react";
 import Image from "next/image";
 import DOMPurify from "dompurify";
+import { API_BASE_URL } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
@@ -59,7 +60,7 @@ export default function MemorizerCard({ location }: MemorizerCardProps) {
     ? location.images.filter((img) => img && !imageError[img])
     : [];
 
-  const proxyUrl = (u: string) => (u ? `/api/img?u=${encodeURIComponent(u)}` : "");
+  const proxyUrl = (u: string) => (u ? `${API_BASE_URL}/img?u=${encodeURIComponent(u)}` : "");
 
   const extractLink = (html: string | null) => {
     if (!html) return null;

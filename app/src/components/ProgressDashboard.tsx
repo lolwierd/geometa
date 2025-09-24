@@ -11,6 +11,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { API_BASE_URL } from "@/lib/config";
 
 ChartJS.register(
   CategoryScale,
@@ -32,7 +33,7 @@ export default function ProgressDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch(`${API_BASE_URL}/stats`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

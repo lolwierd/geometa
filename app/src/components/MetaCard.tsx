@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, type MouseEvent } from "react";
 import Image from "next/image";
 import DOMPurify from "dompurify";
+import { API_BASE_URL } from "@/lib/config";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +60,7 @@ export default function MetaCard({ location, onDelete }: MetaCardProps) {
       )
     ) {
       try {
-        const response = await fetch(`/api/gallery?id=${location.id}`, {
+        const response = await fetch(`${API_BASE_URL}/gallery?id=${location.id}`, {
           method: "DELETE",
         });
         if (!response.ok) {
@@ -102,7 +103,7 @@ export default function MetaCard({ location, onDelete }: MetaCardProps) {
     : [];
 
   // Generate proxied URL that goes through our cache route for caching
-  const proxyUrl = (u: string) => (u ? `/api/img?u=${encodeURIComponent(u)}` : "");
+  const proxyUrl = (u: string) => (u ? `${API_BASE_URL}/img?u=${encodeURIComponent(u)}` : "");
 
   const stripHtml = (html: string | null) => {
     if (!html) return "";
