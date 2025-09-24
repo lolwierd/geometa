@@ -86,31 +86,24 @@ export async function GET(request: NextRequest, context: any) {
       `)
     ]);
 
-    // Build countries array
-    const countries = countriesResult.map(row => ({
-      name: row.country,
-      count: row.count
-    }));
+    // Build countries array (simple string array to match SQLite API)
+    const countries = countriesResult.map(row => row.country);
 
     // Build states array (memorizer progress states: new, review, lapsed)
     const states = statesResult.map(row => row.state);
 
     // Build continents from countries (using existing continent mapping)
-    const continents: Array<{ name: Continent; count: number }> = [];
     const continentCounts: Record<Continent, number> = {} as Record<Continent, number>;
 
-    countries.forEach(({ name, count }) => {
-      const continent = getContinent(name);
+    countries.forEach((countryName) => {
+      const continent = getContinent(countryName);
       if (continent) {
-        continentCounts[continent] = (continentCounts[continent] || 0) + count;
+        continentCounts[continent] = (continentCounts[continent] || 0) + 1;
       }
     });
 
-    Object.entries(continentCounts).forEach(([continent, count]) => {
-      continents.push({ name: continent as Continent, count });
-    });
-
-    continents.sort((a, b) => b.count - a.count);
+    // Convert to simple string array to match SQLite API
+    const continents = Object.keys(continentCounts).sort() as Continent[];
 
     // Get overall stats
     const statsResult = await queryBuilder.selectFirst<{ 
@@ -125,10 +118,10 @@ export async function GET(request: NextRequest, context: any) {
       FROM locations
     `);
 
+    // Keep original stats format to match SQLite API
     const stats = {
-      totalLocations: statsResult?.total_locations || 0,
-      totalCountries: statsResult?.total_countries || 0,
-      totalLoaded: statsResult?.total_loaded || 0,
+      total_locations: statsResult?.total_locations || 0,
+      total_countries: statsResult?.total_countries || 0,
     };
 
     logger.info(`✅ Gallery API (D1): Returning ${locations.length}/${total} locations`);
@@ -136,6 +129,7 @@ export async function GET(request: NextRequest, context: any) {
     return NextResponse.json({
       success: true,
       locations: processedLocations,
+      total,
       countries,
       continents,
       states,
