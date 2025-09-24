@@ -1,8 +1,11 @@
 name = "geometa-gallery"
-compatibility_date = "2024-01-01"
+main = ".open-next/worker.js"
+compatibility_date = "2025-03-25"
+compatibility_flags = ["nodejs_compat"]
 
-[env.production]
-vars = { NODE_ENV = "production" }
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 [[d1_databases]]
 binding = "geometa_gallery"
