@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:static": "NEXT_CONFIG_FILE=next.config.static.mjs npm run build:static:clean && mv src/app/api temp.api && next build && mv temp.api src/app/api && npm run build:static:config",
+    "build:static": "npm run build:static:prepare && next build && npm run build:static:restore",
+    "build:static:prepare": "npm run build:static:clean && mv src/app/api temp.api && cp next.config.mjs next.config.regular.mjs && cp next.config.static.mjs next.config.mjs",
+    "build:static:restore": "cp next.config.regular.mjs next.config.mjs && mv temp.api src/app/api && npm run build:static:config",
     "build:static:clean": "rm -rf .next out 2>/dev/null || true",
     "build:static:config": "cp static-config/_redirects static-config/_headers out/ 2>/dev/null || true",
     "start": "next start",
