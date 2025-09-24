@@ -31,6 +31,7 @@ import {
 import MetaCard from "@/components/MetaCard";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { API_BASE_URL } from "@/lib/config";
 
 interface Location {
   id: number;
@@ -154,7 +155,7 @@ function HomeContent() {
         params.set("limit", limit.toString());
         params.set("offset", offset.toString());
 
-        const response = await fetch(`/api/gallery?${params}`);
+        const response = await fetch(`${API_BASE_URL}/gallery?${params}`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch locations: ${response.status}`);

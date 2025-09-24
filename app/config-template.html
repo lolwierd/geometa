@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href="/_next/static/media/05a31a2ca4975f99.woff2" as="font" type="font/woff2" crossorigin="" />
+    
+    <!-- API Configuration - Update this URL to point to your backend -->
+    <script>
+      // Configure API URL for static deployment
+      // Options:
+      // 1. Set to full backend URL: 'https://your-backend.example.com/api'
+      // 2. Leave as '/api' if backend is served from same domain
+      // 3. Use environment variable: process.env.NEXT_PUBLIC_API_URL
+      window.__GEOMETA_API_URL__ = '/api';
+    </script>
+    
+    <meta name="robots" content="index, follow" />
+    <meta name="description" content="Automatically capture and organize GeoGuessr meta clues with our smart browser extension and beautiful gallery interface." />
+    <meta name="author" content="GeoMeta Team" />
+    <title>GeoMeta Gallery - Your GeoGuessr Meta Collection</title>
+    <link rel="stylesheet" href="/_next/static/css/app/layout.css?v=1695481234" />
+  </head>
+  <body class="font-sans">
+    <div id="__next">
+      <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+        <div class="container mx-auto px-2 py-6">
+          <div class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+              <div class="flex-1">
+                <h1 class="text-4xl font-bold mb-2 text-white">
+                  GeoMeta <span class="text-blue-400">Gallery</span>
+                </h1>
+                <p class="text-slate-300">
+                  Your personal collection of GeoGuessr meta clues and learning materials
+                </p>
+                <div class="mt-4 p-4 bg-yellow-900/50 border border-yellow-600 rounded-lg">
+                  <p class="text-yellow-200 text-sm">
+                    <strong>Configuration Required:</strong> 
+                    This is a static build. Please configure the API URL in the HTML head section 
+                    or set the NEXT_PUBLIC_API_URL environment variable to point to your backend service.
+                  </p>
+                  <p class="text-yellow-200 text-xs mt-2">
+                    Current API URL: <code class="bg-yellow-800 px-1 rounded" id="current-api-url"></code>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      // Display current API configuration
+      const apiUrl = window.__GEOMETA_API_URL__ || '/api';
+      const elem = document.getElementById('current-api-url');
+      if (elem) {
+        elem.textContent = apiUrl;
+      }
+      
+      // Basic connectivity test
+      if (apiUrl !== '/api') {
+        fetch(apiUrl + '/gallery?limit=1')
+          .then(response => {
+            if (response.ok) {
+              console.log('✅ API connection successful');
+            } else {
+              console.warn('⚠️ API connection failed:', response.status);
+            }
+          })
+          .catch(error => {
+            console.error('❌ API connection error:', error);
+          });
+      }
+    </script>
+  </body>
+</html>
