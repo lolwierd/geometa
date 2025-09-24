@@ -1,8 +1,0 @@
-# Cloudflare Pages routing configuration
-# Place this file as `_redirects` in the output directory
-
-# SPA routing - serve index.html for all routes that don't match files
-/*    /index.html   200
-
-# API proxy (optional) - uncomment if you want to proxy API calls
-# /api/*  https://your-backend-api.example.com/api/:splat  200
