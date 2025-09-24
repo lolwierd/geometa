@@ -2,6 +2,7 @@
 // Replaces SQLite FTS5 virtual tables with LIKE-based search
 
 import { D1QueryBuilder } from './db-d1';
+import { getCountriesByContinent, Continent } from './continents';
 
 export interface SearchOptions {
   query?: string;
@@ -80,11 +81,19 @@ export class LocationSearcher {
       }
     }
 
-    // Continent filter (need to map continents to countries)
+    // Continent filter (map continents to countries)
     if (continent && continent !== 'all') {
-      // This would need to be implemented with a country-to-continent mapping
-      // For now, we'll skip this complex filter
-      console.warn('Continent filtering not yet implemented in D1 search');
+      const continentList = continent.split(',').map(c => c.trim()).filter(c => c);
+      const continentCountries = Array.from(
+        new Set(
+          continentList.flatMap((c) => getCountriesByContinent(c as Continent))
+        )
+      );
+      if (continentCountries.length > 0) {
+        const placeholders = continentCountries.map(() => '?').join(',');
+        conditions.push(`country IN (${placeholders})`);
+        params.push(...continentCountries);
+      }
     }
 
     // Build the main query
