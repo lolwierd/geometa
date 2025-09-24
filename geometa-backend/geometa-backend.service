@@ -1,0 +1,28 @@
+[Unit]
+Description=GeoMeta Backend API Server
+After=network.target
+
+[Service]
+Type=simple
+User=geometa
+Group=geometa
+WorkingDirectory=/opt/geometa-backend
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=DB_PATH=db/geometa.db
+ExecStart=/usr/bin/node dist/server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=geometa-backend
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/geometa-backend/db /opt/geometa-backend/.cache
+
+[Install]
+WantedBy=multi-user.target
