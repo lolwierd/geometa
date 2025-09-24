@@ -55,7 +55,7 @@ export default function MemorizerPage() {
       }
       const query = params.toString();
       const memorizerRes = await fetch(
-        `/api/memorizer${query ? `?${query}` : ""}`,
+        `${API_BASE_URL}/memorizer${query ? `?${query}` : ""}`,
       );
       const memorizerData = await memorizerRes.json();
 

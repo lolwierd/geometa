@@ -5,6 +5,7 @@ const nextConfig = {
   distDir: 'out',
   images: {
     unoptimized: true, // Required for static export
+    domains: ["learnablemeta.com"], // Keep image domains for consistency
   },
   // Skip building API routes by not including them
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
