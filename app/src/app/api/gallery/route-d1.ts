@@ -29,13 +29,33 @@ interface ProcessedLocation extends Omit<LocationRow, "images" | "raw_data"> {
 
 export async function GET(request: NextRequest, context: any) {
   try {
+    // Enhanced debugging for Cloudflare environment
+    console.log('🔍 D1 Gallery API - Environment check:', {
+      hasContext: !!context,
+      contextKeys: context ? Object.keys(context) : [],
+      hasEnv: !!(context && context.env),
+      envKeys: context && context.env ? Object.keys(context.env) : [],
+      hasDB: !!(context && context.env && context.env.DB),
+      globalProcess: !!(globalThis as any).process,
+      processEnv: (globalThis as any).process ? Object.keys((globalThis as any).process.env || {}) : []
+    });
+
     // Get Cloudflare environment (D1 database binding)
-    const env = context.env || (globalThis as any).process?.env;
-    if (!env?.DB) {
-      throw new Error('D1 database binding not found');
+    const env = context?.env || (globalThis as any).process?.env;
+    
+    if (!env) {
+      console.error('❌ No environment found in context or global');
+      throw new Error('Environment not available');
+    }
+    
+    if (!env.DB) {
+      console.error('❌ D1 database binding not found in env:', Object.keys(env));
+      throw new Error('D1 database binding not found. Check wrangler.toml configuration.');
     }
 
-    // Initialize D1 query builder
+    console.log('✅ D1 database binding found, initializing query builder');
+
+    // Initialize D1 query builder with enhanced error handling
     const queryBuilder = new D1QueryBuilder(env.DB);
     const searcher = createLocationSearcher(queryBuilder);
 
@@ -49,7 +69,8 @@ export async function GET(request: NextRequest, context: any) {
 
     logger.info("🔍 Gallery API request (D1):", { country, continent, state, search, limit, offset });
 
-    // Use the new search functionality
+    // Use the new search functionality with enhanced error handling
+    console.log('🔍 Starting location search...');
     const searchResult = await searcher.searchLocations<LocationRow>({
       query: search || undefined,
       country: country || undefined,
@@ -60,6 +81,7 @@ export async function GET(request: NextRequest, context: any) {
     });
 
     const { results: locations, total, hasMore } = searchResult;
+    console.log(`✅ Search completed: ${locations.length} results, ${total} total`);
 
     // Process JSON fields (same as original)
     const processedLocations: ProcessedLocation[] = locations.map((location) => ({
@@ -67,6 +89,8 @@ export async function GET(request: NextRequest, context: any) {
       images: safeJsonParse(location.images, []),
       raw_data: safeJsonParse(location.raw_data, {}),
     }));
+
+    console.log('🔍 Getting metadata for filters...');
 
     // Get metadata for filters (countries, continents, states)
     const [countriesResult, statesResult] = await Promise.all([
@@ -85,6 +109,8 @@ export async function GET(request: NextRequest, context: any) {
         ORDER BY state ASC
       `)
     ]);
+
+    console.log(`✅ Metadata queries completed: ${countriesResult.length} countries, ${statesResult.length} states`);
 
     // Build countries array (simple string array to match SQLite API)
     const countries = countriesResult.map(row => row.country);
@@ -105,6 +131,8 @@ export async function GET(request: NextRequest, context: any) {
     // Convert to simple string array to match SQLite API
     const continents = Object.keys(continentCounts).sort() as Continent[];
 
+    console.log('🔍 Getting overall stats...');
+
     // Get overall stats
     const statsResult = await queryBuilder.selectFirst<{ 
       total_locations: number; 
@@ -118,6 +146,8 @@ export async function GET(request: NextRequest, context: any) {
       FROM locations
     `);
 
+    console.log('✅ Stats query completed:', statsResult);
+
     // Keep original stats format to match SQLite API
     const stats = {
       total_locations: statsResult?.total_locations || 0,
@@ -126,7 +156,7 @@ export async function GET(request: NextRequest, context: any) {
 
     logger.info(`✅ Gallery API (D1): Returning ${locations.length}/${total} locations`);
 
-    return NextResponse.json({
+    const response = {
       success: true,
       locations: processedLocations,
       total,
@@ -147,13 +177,18 @@ export async function GET(request: NextRequest, context: any) {
         state: state === "all" ? null : state?.split(','),
         search: search || null,
       },
-    });
+    };
+
+    console.log('✅ D1 Gallery API response prepared successfully');
+    return NextResponse.json(response);
   } catch (error) {
+    console.error("❌ Gallery API (D1) error:", error);
     logger.error("❌ Gallery API (D1) error:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch gallery data",
         details: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 },
     );

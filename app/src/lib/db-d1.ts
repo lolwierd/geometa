@@ -58,7 +58,21 @@ export class D1DatabaseAdapter {
 
   // Prepare a SQL statement (returns D1PreparedStatement)
   prepare(sql: string): D1PreparedStatement {
-    return this.db.prepare(sql);
+    try {
+      if (!this.db) {
+        throw new Error('D1 database not initialized');
+      }
+      
+      const stmt = this.db.prepare(sql);
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement');
+      }
+      
+      return stmt;
+    } catch (error) {
+      console.error('D1 prepare error:', { sql, error });
+      throw error;
+    }
   }
 
   // Execute a single SQL statement
@@ -106,34 +120,95 @@ export class D1QueryBuilder {
 
   // Helper for SELECT queries that return all rows
   async selectAll<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-    const stmt = this.db.prepare(sql);
-    const bound = params.length > 0 ? stmt.bind(...params) : stmt;
-    const result = await bound.all<T>();
-    return result.results;
+    try {
+      const stmt = this.db.prepare(sql);
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement');
+      }
+      
+      const bound = params.length > 0 ? stmt.bind(...params) : stmt;
+      if (!bound) {
+        throw new Error('Failed to bind parameters to statement');
+      }
+      
+      const result = await bound.all<T>();
+      if (!result || typeof result.results === 'undefined') {
+        console.warn('D1 query result missing results property:', { sql, params, result });
+        return [];
+      }
+      
+      return result.results || [];
+    } catch (error) {
+      console.error('D1 selectAll error:', { sql, params, error });
+      throw error;
+    }
   }
 
   // Helper for SELECT queries that return a single row
   async selectFirst<T = any>(sql: string, params: any[] = []): Promise<T | null> {
-    const stmt = this.db.prepare(sql);
-    const bound = params.length > 0 ? stmt.bind(...params) : stmt;
-    return await bound.first<T>();
+    try {
+      const stmt = this.db.prepare(sql);
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement');
+      }
+      
+      const bound = params.length > 0 ? stmt.bind(...params) : stmt;
+      if (!bound) {
+        throw new Error('Failed to bind parameters to statement');
+      }
+      
+      const result = await bound.first<T>();
+      return result || null;
+    } catch (error) {
+      console.error('D1 selectFirst error:', { sql, params, error });
+      throw error;
+    }
   }
 
   // Helper for INSERT/UPDATE/DELETE queries
   async run(sql: string, params: any[] = []): Promise<D1Result> {
-    const stmt = this.db.prepare(sql);
-    const bound = params.length > 0 ? stmt.bind(...params) : stmt;
-    return await bound.run();
+    try {
+      const stmt = this.db.prepare(sql);
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement');
+      }
+      
+      const bound = params.length > 0 ? stmt.bind(...params) : stmt;
+      if (!bound) {
+        throw new Error('Failed to bind parameters to statement');
+      }
+      
+      const result = await bound.run();
+      if (!result) {
+        throw new Error('D1 query returned no result');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('D1 run error:', { sql, params, error });
+      throw error;
+    }
   }
 
   // Helper for INSERT queries that need to return the inserted ID
   async insert(sql: string, params: any[] = []): Promise<number> {
     const result = await this.run(sql, params);
-    if (!result.meta) {
-      throw new Error('Insert operation failed - no metadata returned');
+    
+    // Add defensive checks for D1 result structure
+    if (!result) {
+      throw new Error('Insert operation failed - no result returned');
     }
+    
+    if (!result.meta) {
+      console.warn('Insert operation - no metadata returned, using fallback');
+      return 0;
+    }
+    
     // D1 returns the inserted row ID in the meta object
-    return result.meta.rows_written > 0 ? result.meta.size_after : 0;
+    const rowsWritten = result.meta.rows_written || 0;
+    const lastRowId = result.meta.size_after || 0;
+    
+    return rowsWritten > 0 ? lastRowId : 0;
   }
 }
 
