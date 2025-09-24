@@ -70,12 +70,12 @@ export class LocationSearcher {
       }
     }
 
-    // State filter (if applicable)
+    // State filter (memorizer progress state: new, review, lapsed)
     if (state && state !== 'all') {
       const states = state.split(',').map(s => s.trim()).filter(s => s);
       if (states.length > 0) {
         const placeholders = states.map(() => '?').join(',');
-        conditions.push(`country_code IN (${placeholders})`);
+        conditions.push(`mp.state IN (${placeholders})`);
         params.push(...states);
       }
     }
@@ -104,6 +104,7 @@ export class LocationSearcher {
     // Get count for pagination
     const countSql = `
       SELECT COUNT(*) as count FROM locations l
+      LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
       ${whereClause}
     `;
 
