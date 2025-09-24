@@ -77,12 +77,12 @@ export async function GET(request: NextRequest, context: any) {
         GROUP BY country 
         ORDER BY count DESC, country ASC
       `),
-      queryBuilder.selectAll<{ country_code: string; count: number }>(`
-        SELECT country_code, COUNT(*) as count 
-        FROM locations 
-        WHERE country_code IS NOT NULL 
-        GROUP BY country_code 
-        ORDER BY count DESC, country_code ASC
+      queryBuilder.selectAll<{ state: string; count: number }>(`
+        SELECT state, COUNT(*) as count 
+        FROM memorizer_progress 
+        WHERE state IS NOT NULL 
+        GROUP BY state 
+        ORDER BY state ASC
       `)
     ]);
 
@@ -92,11 +92,8 @@ export async function GET(request: NextRequest, context: any) {
       count: row.count
     }));
 
-    // Build states array
-    const states = statesResult.map(row => ({
-      code: row.country_code,
-      count: row.count
-    }));
+    // Build states array (memorizer progress states: new, review, lapsed)
+    const states = statesResult.map(row => row.state);
 
     // Build continents from countries (using existing continent mapping)
     const continents: Array<{ name: Continent; count: number }> = [];
