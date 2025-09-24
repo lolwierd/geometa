@@ -1,6 +1,13 @@
 // Cloudflare D1 database client
 // Replaces better-sqlite3 with async D1 operations
 
+// Type definitions for D1 (since @cloudflare/workers-types may not be available at build time)
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+  exec(query: string): Promise<void>;
+  batch(statements: D1PreparedStatement[]): Promise<D1Result[]>;
+}
+
 interface CloudflareEnv {
   DB: D1Database;
   NODE_ENV?: string;
