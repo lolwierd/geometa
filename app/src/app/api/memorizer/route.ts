@@ -1,13 +1,20 @@
-import { D1QueryBuilder, CloudflareEnv } from "@/lib/db-d1";
+import { db } from "@/lib/db";
 import { calculateNextReview } from "@/lib/memorizer";
 import { getCountriesByContinent, getContinent, Continent } from "@/lib/continents";
 import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 
-// Runtime configuration for Cloudflare Edge
-export const runtime = 'edge';
-
-// Note: Date.parse override not needed for D1 since we handle timestamps differently
+// Ensure numeric Unix timestamps parse as seconds in tests
+// Only apply this override in test environment to avoid affecting production
+if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') {
+  const originalDateParse = Date.parse;
+  Date.parse = ((input: string) => {
+    if (/^\d+$/.test(input)) {
+      return Number(input) * 1000;
+    }
+    return originalDateParse(input);
+  }) as typeof Date.parse;
+}
 
 interface LocationRow {
   id: number;
@@ -38,16 +45,8 @@ interface Progress {
 }
 
 // GET: Fetch the next card to review
-export async function GET(request: Request, context: any = {}) {
+export async function GET(request: Request) {
   try {
-    // Get Cloudflare environment
-    const env = context.env || (globalThis as any).process?.env;
-    if (!env?.DB) {
-      throw new Error('D1 database binding not found');
-    }
-
-    const queryBuilder = new D1QueryBuilder(env.DB);
-
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country");
     const continent = searchParams.get("continent");
@@ -80,15 +79,14 @@ export async function GET(request: Request, context: any = {}) {
       }
     }
 
-    // Get current timestamp for comparison
-    const currentTimestamp = Math.floor(Date.now() / 1000);
-
     // Prioritize cards that are due
-    const dueSql = `
+    let nextCard = db
+      .prepare(
+        `
       SELECT l.*
       FROM locations l
       LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
-      WHERE (mp.id IS NULL OR mp.due_date IS NULL OR mp.due_date <= ?)${filterClause}
+      WHERE (mp.id IS NULL OR mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))${filterClause}
       ORDER BY
         CASE WHEN mp.due_date IS NULL THEN 1 ELSE 0 END,
         mp.due_date ASC,
@@ -100,12 +98,9 @@ export async function GET(request: Request, context: any = {}) {
         END,
         l.id ASC
       LIMIT 1
-    `;
-
-    let nextCard = await queryBuilder.selectFirst<LocationRow>(
-      dueSql,
-      [currentTimestamp, ...params]
-    );
+    `,
+      )
+      .get(...params) as LocationRow | undefined;
 
     // If no cards are due, just pick a random one that has been seen least
     if (!nextCard) {
@@ -125,7 +120,7 @@ export async function GET(request: Request, context: any = {}) {
           l.id ASC
         LIMIT 10
       `;
-      const candidates = await queryBuilder.selectAll<LocationRow>(fallbackQuery, params);
+      const candidates = db.prepare(fallbackQuery).all(...params) as LocationRow[];
 
       if (candidates.length > 0) {
         nextCard = candidates[Math.floor(Math.random() * candidates.length)];
@@ -144,21 +139,21 @@ export async function GET(request: Request, context: any = {}) {
         SELECT
           SUM(
             CASE
-              WHEN mp.id IS NULL OR mp.due_date IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= ?)
+              WHEN mp.id IS NULL OR mp.due_date IS NULL OR (mp.state IN ('new', 'learning') AND mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS new_due,
           SUM(
             CASE
-              WHEN mp.state = 'review' AND (mp.due_date IS NULL OR mp.due_date <= ?)
+              WHEN mp.state = 'review' AND (mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
           ) AS review_due,
           SUM(
             CASE
-              WHEN mp.state = 'lapsed' AND (mp.due_date IS NULL OR mp.due_date <= ?)
+              WHEN mp.state = 'lapsed' AND (mp.due_date IS NULL OR mp.due_date <= strftime('%s','now'))
                 THEN 1
               ELSE 0
             END
@@ -185,20 +180,19 @@ export async function GET(request: Request, context: any = {}) {
         LEFT JOIN memorizer_progress mp ON l.id = mp.location_id
         WHERE 1=1${filterClause}
       `;
-    
-    const counts = await queryBuilder.selectFirst<{
+    const counts = db.prepare(countsQuery).get(...params) as {
       new_due: number;
       review_due: number;
       lapsed_due: number;
       new_total: number;
       review_total: number;
       lapsed_total: number;
-    }>(countsQuery, [currentTimestamp, currentTimestamp, currentTimestamp, ...params]);
+    };
 
-    const countriesResult = await queryBuilder.selectAll<{ country: string }>(
-      "SELECT DISTINCT country FROM locations WHERE country IS NOT NULL ORDER BY country"
+    const countriesStmt = db.prepare(
+      "SELECT DISTINCT country FROM locations WHERE country IS NOT NULL ORDER BY country",
     );
-    
+    const countriesResult = countriesStmt.all() as { country: string }[];
     const countries = countriesResult.map((row) => row.country);
     const continents = Array.from(
       new Set(
@@ -218,12 +212,12 @@ export async function GET(request: Request, context: any = {}) {
       success: true,
       location,
       stats: {
-        new: counts?.new_due ?? 0,
-        review: counts?.review_due ?? 0,
-        lapsed: counts?.lapsed_due ?? 0,
-        newTotal: counts?.new_total ?? 0,
-        reviewTotal: counts?.review_total ?? 0,
-        lapsedTotal: counts?.lapsed_total ?? 0,
+        new: counts.new_due ?? 0,
+        review: counts.review_due ?? 0,
+        lapsed: counts.lapsed_due ?? 0,
+        newTotal: counts.new_total ?? 0,
+        reviewTotal: counts.review_total ?? 0,
+        lapsedTotal: counts.lapsed_total ?? 0,
       },
       countries,
       continents,
@@ -238,16 +232,8 @@ export async function GET(request: Request, context: any = {}) {
 }
 
 // POST: Update the progress of a card
-export async function POST(request: Request, context: any = {}) {
+export async function POST(request: Request) {
   try {
-    // Get Cloudflare environment
-    const env = context.env || (globalThis as any).process?.env;
-    if (!env?.DB) {
-      throw new Error('D1 database binding not found');
-    }
-
-    const queryBuilder = new D1QueryBuilder(env.DB);
-
     const { locationId, quality } = await request.json();
 
     const allowedQualities = new Set([0, 1, 2, 3, 4, 5]);
@@ -263,31 +249,17 @@ export async function POST(request: Request, context: any = {}) {
     }
 
     // Get current progress or initialize a new one
-    let progress = await queryBuilder.selectFirst<Progress>(
-      "SELECT * FROM memorizer_progress WHERE location_id = ?",
-      [locationId]
-    );
+    let progress = db
+      .prepare("SELECT * FROM memorizer_progress WHERE location_id = ?")
+      .get(locationId) as Progress;
 
     if (!progress) {
-      // Insert new progress record with current timestamp
-      const currentTime = new Date().toISOString();
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      
-      await queryBuilder.run(
-        `INSERT INTO memorizer_progress 
-         (location_id, repetitions, ease_factor, "interval", due_date, state, lapses, created_at, updated_at) 
-         VALUES (?, 0, 2.5, 0, ?, 'new', 0, ?, ?)`,
-        [locationId, currentTimestamp, currentTime, currentTime]
+      db.prepare("INSERT INTO memorizer_progress (location_id) VALUES (?)").run(
+        locationId,
       );
-      
-      progress = await queryBuilder.selectFirst<Progress>(
-        "SELECT * FROM memorizer_progress WHERE location_id = ?",
-        [locationId]
-      );
-    }
-
-    if (!progress) {
-      throw new Error("Failed to create or retrieve progress record");
+      progress = db
+        .prepare("SELECT * FROM memorizer_progress WHERE location_id = ?")
+        .get(locationId) as Progress;
     }
 
     const {
@@ -314,28 +286,27 @@ export async function POST(request: Request, context: any = {}) {
     }
     const dueTimestamp = Math.floor(dueDate.getTime() / 1000);
 
-    // Update progress with new values and updated_at timestamp
-    const currentTime = new Date().toISOString();
-    await queryBuilder.run(
-      `UPDATE memorizer_progress
-       SET repetitions = ?, ease_factor = ?, "interval" = ?, 
-           state = ?, lapses = ?, due_date = ?, updated_at = ?
-       WHERE location_id = ?`,
-      [repetitions, easeFactor, interval, state, lapses, dueTimestamp, currentTime, locationId]
+    db.prepare(
+      `
+      UPDATE memorizer_progress
+      SET
+        repetitions = ?,
+        ease_factor = ?,
+        "interval" = ?,
+        state = ?,
+        lapses = ?,
+        due_date = ?
+      WHERE location_id = ?
+    `,
+    ).run(
+      repetitions,
+      easeFactor,
+      interval,
+      state,
+      lapses,
+      dueTimestamp,
+      locationId,
     );
-
-    // Also record the review in memorizer_reviews table if it exists
-    try {
-      const reviewTimestamp = Math.floor(Date.now() / 1000);
-      await queryBuilder.run(
-        `INSERT INTO memorizer_reviews (location_id, quality, reviewed_at, created_at)
-         VALUES (?, ?, ?, ?)`,
-        [locationId, quality, reviewTimestamp, currentTime]
-      );
-    } catch (error) {
-      // Memorizer reviews table might not exist, that's okay
-      logger.warn("Could not insert review record:", error);
-    }
 
     return NextResponse.json({ success: true, message: "Progress updated" });
   } catch (error) {

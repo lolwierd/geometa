@@ -64,12 +64,12 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   }
 }
 
-export async function POST(request, context = {}) {
+export async function POST(request, context) {
   try {
     logger.info("🎯 New collect request received");
 
     // Get Cloudflare environment (D1 database binding)
-    const env = context.env || (globalThis.process && globalThis.process.env);
+    const env = (context && context.env) || (globalThis.process && globalThis.process.env);
     if (!env || !env.DB) {
       throw new Error('D1 database binding not found');
     }
