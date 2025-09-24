@@ -1,0 +1,10 @@
+name = "geometa-gallery"
+compatibility_date = "2024-01-01"
+
+[env.production]
+vars = { NODE_ENV = "production" }
+
+[[d1_databases]]
+binding = "geometa_gallery"
+database_name = "geometa-gallery"
+database_id = "08ad1d84-9ec7-4ca8-8ced-25995947d0c4"

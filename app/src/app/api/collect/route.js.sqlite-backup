@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
-import { D1QueryBuilder, CloudflareEnv } from "@/lib/db-d1";
+import { db } from "@/lib/db";
 import { getCountryCode } from "@/lib/countryCodes";
 import { logger } from "@/lib/logger";
-
-// Runtime configuration for Cloudflare Edge
-export const runtime = 'edge';
 
 async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   const params = new URLSearchParams({
@@ -25,8 +22,7 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
         "User-Agent": "GeoMetaGallery/2.0",
         Accept: "application/json",
       },
-      // Note: timeout option not available in Cloudflare Workers fetch
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      timeout: 10000, // 10 second timeout
     });
 
     logger.info(
@@ -56,7 +52,7 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   } catch (error) {
     logger.error("❌ Failed to fetch from LearnableMeta API:", error);
 
-    if (error.name === "TimeoutError" || error.message.includes("timeout")) {
+    if (error.name === "AbortError" || error.message.includes("timeout")) {
       throw new Error("Request to LearnableMeta API timed out");
     }
 
@@ -64,18 +60,10 @@ async function fetchLearnableMetaData(panoId, mapId, source = "userscript") {
   }
 }
 
-export async function POST(request, context = {}) {
+
+export async function POST(request) {
   try {
     logger.info("🎯 New collect request received");
-
-    // Get Cloudflare environment (D1 database binding)
-    const env = context.env || (globalThis.process && globalThis.process.env);
-    if (!env || !env.DB) {
-      throw new Error('D1 database binding not found');
-    }
-
-    // Initialize D1 query builder
-    const queryBuilder = new D1QueryBuilder(env.DB);
 
     const requestBody = await request.json();
     const { panoId, mapId, roundNumber = 1, source = "map" } = requestBody;
@@ -115,6 +103,8 @@ export async function POST(request, context = {}) {
       );
     }
 
+
+
     // Fetch meta data from LearnableMeta API
     const metaData = await fetchLearnableMetaData(panoId, mapId, source);
 
@@ -129,6 +119,8 @@ export async function POST(request, context = {}) {
         },
       });
     }
+
+
 
     // Extract and validate country code for flag display
     const countryCode = getCountryCode(metaData.country);
@@ -148,53 +140,43 @@ export async function POST(request, context = {}) {
       raw_data: JSON.stringify(metaData),
     };
 
-    // For D1, we need to handle conflicts differently since there's no ON CONFLICT
-    // First, check if the location already exists
-    const existingLocation = await queryBuilder.selectFirst(
-      "SELECT id FROM locations WHERE raw_data = ?",
-      [locationData.raw_data]
+    // Insert into database (ignore duplicate raw_data)
+    const insertStmt = db.prepare(`
+      INSERT INTO locations (
+        pano_id, map_id, country, country_code, meta_name,
+        note, footer, images, raw_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(raw_data) DO NOTHING
+    `);
+
+    const insertInfo = insertStmt.run(
+      locationData.pano_id,
+      locationData.map_id,
+      locationData.country,
+      locationData.country_code,
+      locationData.meta_name,
+      locationData.note,
+      locationData.footer,
+      locationData.images,
+      locationData.raw_data,
     );
 
     let newLocation;
     let message;
 
-    if (existingLocation) {
-      logger.info("ℹ️ Location already exists in database");
-      newLocation = await queryBuilder.selectFirst(
-        "SELECT * FROM locations WHERE id = ?",
-        [existingLocation.id]
-      );
+    if (insertInfo.changes === 0) {
+      logger.info("ℹ️ Location already exists in database (ON CONFLICT)");
+      newLocation = db
+        .prepare("SELECT * FROM locations WHERE raw_data = ?")
+        .get(locationData.raw_data);
       message = "Location already exists";
     } else {
-      // Insert new location
-      const currentTime = new Date().toISOString();
-      const insertResult = await queryBuilder.run(`
-        INSERT INTO locations (
-          pano_id, map_id, country, country_code, meta_name,
-          note, footer, images, raw_data, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        locationData.pano_id,
-        locationData.map_id,
-        locationData.country,
-        locationData.country_code,
-        locationData.meta_name,
-        locationData.note,
-        locationData.footer,
-        locationData.images,
-        locationData.raw_data,
-        currentTime,
-        currentTime
-      ]);
-
-      // Get the inserted location
-      // Note: D1 doesn't return lastInsertRowid, so we find by raw_data
-      newLocation = await queryBuilder.selectFirst(
-        "SELECT * FROM locations WHERE raw_data = ?",
-        [locationData.raw_data]
+      logger.info(
+        `💾 Stored location in database with ID: ${insertInfo.lastInsertRowid}`,
       );
-
-      logger.info(`💾 Stored location in database with ID: ${newLocation.id}`);
+      newLocation = db
+        .prepare("SELECT * FROM locations WHERE id = ?")
+        .get(insertInfo.lastInsertRowid);
       message = "Location collected successfully";
     }
 

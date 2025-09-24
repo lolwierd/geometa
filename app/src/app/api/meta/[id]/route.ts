@@ -1,16 +1,37 @@
-import { db } from "@/lib/db";
+import { D1QueryBuilder, CloudflareEnv } from "@/lib/db-d1";
 import { NextRequest, NextResponse } from "next/server";
 
+// Runtime configuration for Cloudflare Edge
+export const runtime = 'edge';
+
 interface Location {
-  images: any;
-  raw_data: any;
+  id: number;
+  pano_id: string;
+  map_id: string;
+  country: string;
+  country_code: string | null;
+  meta_name: string | null;
+  note: string | null;
+  footer: string | null;
+  images: string;
+  raw_data: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  context: any,
 ) {
   try {
+    // Get Cloudflare environment
+    const env = context.env || (globalThis as any).process?.env;
+    if (!env?.DB) {
+      throw new Error('D1 database binding not found');
+    }
+
+    const queryBuilder = new D1QueryBuilder(env.DB);
+
     const { id: idParam } = await context.params;
     const id = parseInt(idParam, 10);
     if (isNaN(id)) {
@@ -20,9 +41,10 @@ export async function GET(
       );
     }
 
-    const location = db
-      .prepare("SELECT * FROM locations WHERE id = ?")
-      .get(id) as Location;
+    const location = await queryBuilder.selectFirst<Location>(
+      "SELECT * FROM locations WHERE id = ?",
+      [id]
+    );
 
     if (!location) {
       return NextResponse.json(
@@ -31,11 +53,31 @@ export async function GET(
       );
     }
 
-    // The 'images' and 'raw_data' fields are stored as JSON strings
-    location.images = JSON.parse(location.images || "[]");
-    location.raw_data = JSON.parse(location.raw_data || "{}");
+    // Parse JSON fields safely
+    let parsedImages;
+    try {
+      parsedImages = JSON.parse(location.images || "[]");
+    } catch (error) {
+      console.error("Error parsing images JSON:", error);
+      parsedImages = [];
+    }
 
-    return NextResponse.json({ success: true, location });
+    let parsedRawData;
+    try {
+      parsedRawData = JSON.parse(location.raw_data || "{}");
+    } catch (error) {
+      console.error("Error parsing raw_data JSON:", error);
+      parsedRawData = {};
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      location: {
+        ...location,
+        images: parsedImages,
+        raw_data: parsedRawData
+      }
+    });
   } catch (error) {
     console.error("Error fetching location:", error);
     return NextResponse.json(

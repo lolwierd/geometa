@@ -18,9 +18,9 @@
     "cloudflare:deploy": "wrangler pages deploy",
     "cloudflare:build": "next build",
     "d1:create": "wrangler d1 create geometa-gallery",
-    "d1:schema": "wrangler d1 execute geometa-gallery --file=db/schema-d1.sql",
-    "d1:import": "wrangler d1 execute geometa-gallery --file=db/export-data.sql",
-    "migrate:d1": "node scripts/migrate.mjs d1",
+    "d1:schema": "wrangler d1 execute geometa-gallery --file=db/schema-d1.sql --remote",
+    "d1:import": "wrangler d1 execute geometa-gallery --file=db/export-data.sql --remote",
+    "migrate:d1": "node scripts/migrate.mjs d1 --remote",
     "migrate:sqlite": "node scripts/migrate.mjs sqlite",
     "migrate:status": "node scripts/migrate.mjs status"
   },
