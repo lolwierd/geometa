@@ -12,7 +12,14 @@
     "db:init": "node db/schema-new.mjs",
     "db:migrate": "node db/schema-new.mjs",
     "db:backup": "cp db/geometa.db db/geometa-backup-$(date +%Y%m%d-%H%M%S).db",
-    "test": "vitest run"
+    "test": "vitest run",
+    "cloudflare:export": "node scripts/export-to-d1.mjs",
+    "cloudflare:dev": "wrangler dev",
+    "cloudflare:deploy": "wrangler pages deploy",
+    "cloudflare:build": "next build",
+    "d1:create": "wrangler d1 create geometa-gallery",
+    "d1:schema": "wrangler d1 execute geometa-gallery --file=db/schema-d1.sql",
+    "d1:import": "wrangler d1 execute geometa-gallery --file=db/export-data.sql"
   },
   "keywords": [
     "geoguessr",
@@ -24,6 +31,7 @@
   "author": "GeoMeta Gallery",
   "license": "MIT",
   "dependencies": {
+    "@cloudflare/workers-types": "^4.20250924.0",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-popover": "^1.1.14",
     "@radix-ui/react-select": "^2.2.5",
@@ -44,7 +52,8 @@
     "react-window": "^1.8.11",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.17",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "wrangler": "^4.39.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",

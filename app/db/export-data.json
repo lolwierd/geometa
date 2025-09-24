@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "exportDate": "2025-09-24T05:48:05.022Z",
+    "sourceDatabase": "SQLite (better-sqlite3)",
+    "targetDatabase": "Cloudflare D1",
+    "totalRecords": {
+      "locations": 0,
+      "memorizerProgress": 0,
+      "memorizerReviews": 0
+    }
+  },
+  "locations": [],
+  "memorizerProgress": [],
+  "memorizerReviews": []
+}
